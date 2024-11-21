@@ -5,12 +5,17 @@ open import Level
 open import Function
 
 
-open import Data.Product using (map₁; map₂; map; <_,_>; _,_; _×_)
+open import Data.Product
 open import Data.Sum
-open import Data.Unit using (⊤)
+open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality 
 
-record Cell {A B A' B' : Set} (lv : A → A') (rv : B → B') (lh : Mealy A B) (rh : Mealy A' B') : Set (suc zero) where
+private
+  variable
+    X Y A B A' B' A'' B'' : Set
+    lv rv lv' rv' : A → B
+
+record Cell (lv : A → A') (rv : B → B') (lh : Mealy A B) (rh : Mealy A' B') : Set (suc zero) where
   private
     module lh = Mealy lh 
     module rh = Mealy rh
@@ -19,7 +24,10 @@ record Cell {A B A' B' : Set} (lv : A → A') (rv : B → B') (lh : Mealy A B) (
     com-s : ∀ {x y} → rh.s (lv x , α y) ≡ rv (lh.s (x , y))
     com-d : ∀ {x y} → rh.d (lv x , α y) ≡  α (lh.d (x , y))
 
-_⊙ᵥ_ : ∀ {A B A'' B'' A' B'} {lv rv lv' rv'} {lh : Mealy A B} {boh : Mealy A'' B''} {rh : Mealy A' B'} → Cell lv' rv' lh boh → Cell lv rv boh rh → Cell (lv ∘ lv') (rv ∘ rv') lh rh
+_⊙ᵥ_ : ∀ {lh : Mealy A B} {boh : Mealy A'' B''} {rh : Mealy A' B'} 
+  → Cell lv' rv' lh boh 
+  → Cell lv rv boh rh 
+  → Cell (lv ∘ lv') (rv ∘ rv') lh rh 
 _⊙ᵥ_ {rv = rv} {lh = lh} α β = 
   let module α = Cell α
       module β = Cell β in record 
@@ -28,14 +36,14 @@ _⊙ᵥ_ {rv = rv} {lh = lh} α β =
         ; com-d = trans β.com-d (cong β.α α.com-d) 
         }
 
-record Cell≡ {A B A' B'} {lv rv} {lh : Mealy A B} {rh : Mealy A' B'} (C C' : Cell lv rv lh rh) : Set (suc zero) where
+record Cell≡ {lh : Mealy A B} {rh : Mealy A' B'} (C C' : Cell lv rv lh rh) : Set (suc zero) where
   private
     module C  = Cell C 
     module C' = Cell C'
   field
     eq : ∀ {x} → C.α x ≡ C'.α x
 
-idH : ∀ {X Y} (h : X → Y) → Cell h h idMealy idMealy
+idH : ∀ (h : X → Y) → Cell h h idMealy idMealy
 idH h = record 
   { α = id 
   ; com-s = refl 
@@ -79,3 +87,39 @@ record CoTabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
     commute₂ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
       Cell≡ ξ (subst₂ (λ Q R → Cell Q R M idMealy) (fst-commute₁ ξ) (snd-commute₁ ξ) (τ ⊙ᵥ idH (universal ξ)))
 
+
+
+fatto : (M : Mealy X Y) → CoTabulator M 
+fatto {X = X} {Y = Y} M = let module M = Mealy M in record 
+  { tab = X ⊎ Y 
+  ; p = inj₁ 
+  ; q = inj₂ 
+  ; τ = record 
+    { α = λ { x → tt } 
+    ; com-s = {! M.s !} 
+    ; com-d = refl 
+    } 
+  ; universal = λ { {f = f} ξ (inj₁ x) → f x
+                  ; {g = g} ξ (inj₂ y) → g y } 
+  ; fst-commute₁ = λ _ → refl 
+  ; snd-commute₁ = λ _ → refl 
+  ; commute₂ = λ { ξ → record { eq = refl } } 
+  }
+
+
+
+fatto2 : (M : Mealy X Y) → Tabulator M 
+fatto2 {X = X} {Y = Y} M = let module M = Mealy M in record 
+  { tab = X × Y
+  ; p = proj₁
+  ; q = proj₂
+  ; τ = record
+    { α = {! !}
+    ; com-s = {! !}
+    ; com-d = {! !}
+    } 
+  ; universal = {! !}
+  ; fst-commute₁ = {! !}
+  ; snd-commute₁ = {! !}
+  ; commute₂ = {! !}
+  }
