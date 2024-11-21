@@ -90,8 +90,8 @@ Y ⋈ X =
 idMealy : ∀ {A} → Mealy A A
 idMealy {A} = record
   { E = ⊤
-  ; d = λ { (a , tt) → tt }
-  ; s = λ { (a , tt) → a }
+  ; d = λ { (a , e) → e }
+  ; s = λ { (a , _) → a }
   }
 
 Mealy[_,_] : (A′ → A) → (B → B′) → Mealy A B → Mealy A′ B′
