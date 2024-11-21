@@ -6,6 +6,7 @@ open import Function
 
 
 open import Data.Product using (map₁; map₂; map; <_,_>; _,_; _×_)
+open import Data.Sum
 open import Data.Unit using (⊤)
 open import Relation.Binary.PropositionalEquality 
 
@@ -59,4 +60,22 @@ record Tabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
     commute₂ : ∀ {U} {f : U → X} {g : U → Y} {ξ : Cell f g idMealy M} → 
       Cell≡ ξ (subst₂ (λ Q R → Cell Q R idMealy M) (fst-commute₁ ξ) (snd-commute₁ ξ) (idH (universal ξ) ⊙ᵥ τ))
 
+
+record CoTabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
+  private
+    module M = Mealy M
+  field
+    tab : Set
+    p   : X → tab
+    q   : Y → tab
+    τ   : Cell p q M idMealy
+    --
+    universal : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
+      (tab → U)
+    fst-commute₁ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
+      (universal ξ) ∘ p ≡ f
+    snd-commute₁ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
+      (universal ξ) ∘ q ≡ g
+    commute₂ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
+      Cell≡ ξ (subst₂ (λ Q R → Cell Q R M idMealy) (fst-commute₁ ξ) (snd-commute₁ ξ) (τ ⊙ᵥ idH (universal ξ)))
 
