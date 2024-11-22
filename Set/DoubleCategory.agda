@@ -150,14 +150,14 @@ fatto {X = X} {Y = Y} M = let module M = Mealy M in record
   ; q = inj₂ 
   ; τ = record 
     { α = λ { x → tt } 
-    ; com-s = {! M.s !} 
-    ; com-d = refl 
+    ; com-s = λ { {x} {e} → {! M.s !} }
+    ; com-d = {! !} -- refl 
     } 
   ; universal = λ { {f = f} ξ (inj₁ x) → f x
                   ; {g = g} ξ (inj₂ y) → g y } 
   ; fst-commute₁ = λ _ → refl 
   ; snd-commute₁ = λ _ → refl 
-  ; commute₂ = λ { ξ → record { eq = refl } } 
+  ; commute₂ = λ { ξ → record { eq = {! Cell.com-d ξ !} } } 
   }
 
 record SubobjectOfInterest (M : Mealy X Y) : Set (suc zero) where
@@ -187,3 +187,10 @@ fatto2 {X = X} {Y = Y} M SOI =
       ; snd-commute₁ = λ { ξ → refl }
       ; commute₂ = record { eq = λ { {x} → {! !} } } --impossible
       }
+
+
+
+
+  -- TODO:
+  -- define companions and conjoints
+  -- prove that they do (not) exist.
