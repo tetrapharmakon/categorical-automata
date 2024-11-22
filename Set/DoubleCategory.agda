@@ -68,8 +68,12 @@ _⊙ₕ_ {M' = M'} {M = M} {N' = N'} {N = N} μ ν =
       module N' = Mealy N' in
   record 
     { α = map μ.α ν.α
-    ; com-s = λ { {y = (z , w) } → trans (cong (λ t → N.s (t , ν.α w)) μ.com-s) ν.com-s }
-    ; com-d = {! !} 
+    ; com-s = λ { {y = (z , w)} → 
+        trans (cong (λ t → N.s (t , ν.α w)) μ.com-s) ν.com-s 
+      }
+    ; com-d = λ { {y = (z , w)} → 
+        cong₂ _,_ μ.com-d (trans (cong (λ t → N.d (t , ν.α w)) μ.com-s) ν.com-d) 
+      }
     } 
 
 record Cell≡ {lh : Mealy A B} {rh : Mealy A' B'} (C C' : Cell lv rv lh rh) : Set (suc zero) where
@@ -221,6 +225,34 @@ fatto2 {X = X} {Y = Y} M SOI =
   --
   --
 
+unitorᴸ : ∀ (M : Mealy X Y) → Cell id id M (M ⋄ idMealy)
+unitorᴸ M = record 
+  { α = λ { x → tt , x } 
+  ; com-s = {! !} 
+  ; com-d = {! !} 
+  }
+
+unitorᴿ : ∀ (M : Mealy X Y) → Cell id id (idMealy ⋄ M) M
+unitorᴿ M = record 
+  { α = λ { (e , _) → e } 
+  ; com-s = {! !} 
+  ; com-d = {! !} 
+  }
+
+unitorᴸ⁻¹ : ∀ (M : Mealy X Y) → Cell id id (M ⋄ idMealy) M
+unitorᴸ⁻¹ M = record 
+  { α = λ { (_ , e) → e } 
+  ; com-s = {! !} 
+  ; com-d = {! !} 
+  }
+
+unitorᴿ⁻¹ : ∀ (M : Mealy X Y) → Cell id id M (idMealy ⋄ M)
+unitorᴿ⁻¹ M = record 
+  { α = λ { x → x , tt } 
+  ; com-s = {! !} 
+  ; com-d = {! !} 
+  }
+
 record Companion {A B} (f : A → B) : Set (suc zero) where
   field
     comp : Mealy A B -- the loose arrow
@@ -228,7 +260,17 @@ record Companion {A B} (f : A → B) : Set (suc zero) where
     Ξ : Cell id f idMealy comp -- the second cell filling the square
   module Λ = Cell Λ
   module Ξ = Cell Ξ
-  --field
-    --zig : Cell≡
-    --zag : Cell≡
-    
+  field
+    zig : Cell≡ (idH f) (Ξ ⊙ᵥ Λ)
+    zag : Cell≡ (unitorᴸ comp ⊙ᵥ ((Ξ ⊙ₕ Λ) ⊙ᵥ unitorᴿ comp)) (idCell comp)
+   
+record Conjoint {A B} (f : A → B) : Set (suc zero) where
+  field
+    conj : Mealy B A -- the loose arrow
+    Λ : Cell f id idMealy conj -- the first cell filling the square
+    Ξ : Cell id f conj idMealy -- the second cell filling the square
+  module Λ = Cell Λ
+  module Ξ = Cell Ξ
+  field
+    zig : Cell≡ (idH f) (Λ ⊙ᵥ Ξ)
+    zag : Cell≡ (unitorᴿ⁻¹ conj ⊙ᵥ ((Ξ ⊙ₕ Λ) ⊙ᵥ unitorᴸ⁻¹ conj)) (idCell conj)
