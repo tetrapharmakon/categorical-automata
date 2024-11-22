@@ -6,13 +6,13 @@ open import Function
 
 
 open import Data.Product
-open import Data.Sum
+open import Data.Sum hiding (map)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality 
+open import Relation.Binary.PropositionalEquality
 
 private
   variable
-    X Y A B A' B' A'' B'' : Set
+    X Y Z A B C A' B' A'' B'' : Set
     lv rv lv' rv' : A → B
 {-
 
@@ -22,7 +22,7 @@ lv       rv
 ↓        ↓
 A' -rh⟶  B'
 
-α : lh.E ⟶  rh.E such that 
+α : lh.E ⟶  rh.E such that
 
 A × E ----⟨d,s⟩⟶  E × B
   |                 |
@@ -36,34 +36,58 @@ commutes.
 -}
 record Cell (lv : A → A') (rv : B → B') (lh : Mealy A B) (rh : Mealy A' B') : Set (suc zero) where
   private
-    module lh = Mealy lh 
+    module lh = Mealy lh
     module rh = Mealy rh
   field
     α  : lh.E → rh.E
     com-s : ∀ {x y} → rh.s (lv x , α y) ≡ rv (lh.s (x , y))
     com-d : ∀ {x y} → rh.d (lv x , α y) ≡  α (lh.d (x , y))
 
-_⊙ᵥ_ : ∀ {lh : Mealy A B} {boh : Mealy A'' B''} {rh : Mealy A' B'} 
-  → Cell lv' rv' lh boh 
-  → Cell lv rv boh rh 
-  → Cell (lv ∘ lv') (rv ∘ rv') lh rh 
-_⊙ᵥ_ {rv = rv} {lh = lh} α β = 
+_⊙ᵥ_ : ∀ {lh : Mealy A B} {boh : Mealy A'' B''} {rh : Mealy A' B'}
+  → Cell lv' rv' lh boh
+  → Cell lv rv boh rh
+  → Cell (lv ∘ lv') (rv ∘ rv') lh rh
+_⊙ᵥ_ {rv = rv} {lh = lh} α β =
   let module α = Cell α
-      module β = Cell β in record 
-        { α = β.α ∘ α.α 
-        ; com-s = trans β.com-s (cong rv α.com-s) 
-        ; com-d = trans β.com-d (cong β.α α.com-d) 
+      module β = Cell β in record
+        { α = β.α ∘ α.α
+        ; com-s = trans β.com-s (cong rv α.com-s)
+        ; com-d = trans β.com-d (cong β.α α.com-d)
         }
+
+_⊙ₕ_ : ∀ {lv : A → X} {rv : C → Z} {M' : Mealy A B} {M : Mealy B C} {N' : Mealy X Y} {N : Mealy Y Z} {rh : Mealy A' B'} {boh : B → Y}
+  → Cell lv boh M' N' 
+  → Cell boh rv M N
+  → Cell lv rv (M ⋄ M') (N ⋄ N')
+_⊙ₕ_ {M' = M'} {M = M} {N' = N'} {N = N} μ ν = 
+  let module μ = Cell μ 
+      module ν = Cell ν 
+      module M = Mealy M 
+      module N = Mealy N 
+      module M' = Mealy M'
+      module N' = Mealy N' in
+  record 
+    { α = map μ.α ν.α
+    ; com-s = λ { {y = (z , w) } → trans (cong (λ t → N.s (t , ν.α w)) μ.com-s) ν.com-s }
+    ; com-d = {! !} 
+    } 
 
 record Cell≡ {lh : Mealy A B} {rh : Mealy A' B'} (C C' : Cell lv rv lh rh) : Set (suc zero) where
   private
-    module C  = Cell C 
+    module C  = Cell C
     module C' = Cell C'
   field
     eq : ∀ {x} → C.α x ≡ C'.α x
 
 idH : ∀ (h : X → Y) → Cell h h idMealy idMealy
-idH h = record 
+idH h = record
+  { α = id
+  ; com-s = refl
+  ; com-d = refl
+  }
+
+idCell : ∀ (M : Mealy X Y) → Cell id id M M
+idCell M = record 
   { α = id 
   ; com-s = refl 
   ; com-d = refl 
@@ -71,10 +95,10 @@ idH h = record
 
 {-
 
-the tabulator of (X×E → E×Y) is a map τ : 1 → E (so, a point of E) such that 
+the tabulator of (X×E → E×Y) is a map τ : 1 → E (so, a point of E) such that
 
-tab × 1 ---id- 1 × tab 
-   |             |          
+tab × 1 ---id- 1 × tab
+   |             |
   p×τ           τ×q
    |             |
    ↓             ↓
@@ -82,8 +106,8 @@ X × E -⟨d,s⟩⟶  E × Y
 
 with the property that every ξ like
 
- U × 1 ---id---- 1 × U 
-   |             | 
+ U × 1 ---id---- 1 × U
+   |             |
   f×e₀         e₀×g
    |             |
    ↓             ↓
@@ -91,13 +115,13 @@ X × E -⟨d,s⟩⟶  E × Y
 
 factors as
 
- U × 1 ---id---- 1 × U 
-   |             | 
+ U × 1 ---id---- 1 × U
+   |             |
   _×!           !×_
    |             |
    ↓             ↓
-tab × 1 ---id- 1 × tab 
-   |             |          
+tab × 1 ---id- 1 × tab
+   |             |
   p×τ           τ×q
    |             |
    ↓             ↓
@@ -113,13 +137,13 @@ record Tabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
     q   : tab → Y
     τ   : Cell p q idMealy M
     --
-    universal : ∀ {U} {f : U → X} {g : U → Y} (ξ : Cell f g idMealy M) → 
+    universal : ∀ {U} {f : U → X} {g : U → Y} (ξ : Cell f g idMealy M) →
       (U → tab)
-    fst-commute₁ : ∀ {U} {f : U → X} {g : U → Y} (ξ : Cell f g idMealy M) → 
+    fst-commute₁ : ∀ {U} {f : U → X} {g : U → Y} (ξ : Cell f g idMealy M) →
       p ∘ (universal ξ) ≡ f
-    snd-commute₁ : ∀ {U} {f : U → X} {g : U → Y} (ξ : Cell f g idMealy M) → 
+    snd-commute₁ : ∀ {U} {f : U → X} {g : U → Y} (ξ : Cell f g idMealy M) →
       q ∘ (universal ξ) ≡ g
-    commute₂ : ∀ {U} {f : U → X} {g : U → Y} {ξ : Cell f g idMealy M} → 
+    commute₂ : ∀ {U} {f : U → X} {g : U → Y} {ξ : Cell f g idMealy M} →
       Cell≡ ξ (subst₂ (λ Q R → Cell Q R idMealy M) (fst-commute₁ ξ) (snd-commute₁ ξ) (idH (universal ξ) ⊙ᵥ τ))
 
 
@@ -132,48 +156,48 @@ record CoTabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
     q   : Y → cotab
     τ   : Cell p q M idMealy
     --
-    universal : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
+    universal : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) →
       (cotab → U)
-    fst-commute₁ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
+    fst-commute₁ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) →
       (universal ξ) ∘ p ≡ f
-    snd-commute₁ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
+    snd-commute₁ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) →
       (universal ξ) ∘ q ≡ g
-    commute₂ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
+    commute₂ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) →
       Cell≡ ξ (subst₂ (λ Q R → Cell Q R M idMealy) (fst-commute₁ ξ) (snd-commute₁ ξ) (τ ⊙ᵥ idH (universal ξ)))
 
 
 
-fatto : (M : Mealy X Y) → CoTabulator M 
-fatto {X = X} {Y = Y} M = let module M = Mealy M in record 
-  { cotab = X ⊎ Y 
-  ; p = inj₁ 
-  ; q = inj₂ 
-  ; τ = record 
-    { α = λ { x → tt } 
+fatto : (M : Mealy X Y) → CoTabulator M
+fatto {X = X} {Y = Y} M = let module M = Mealy M in record
+  { cotab = X ⊎ Y
+  ; p = inj₁
+  ; q = inj₂
+  ; τ = record
+    { α = λ { x → tt }
     ; com-s = λ { {x} {e} → {! M.s !} }
-    ; com-d = {! !} -- refl 
-    } 
+    ; com-d = {! !} -- refl
+    }
   ; universal = λ { {f = f} ξ (inj₁ x) → f x
-                  ; {g = g} ξ (inj₂ y) → g y } 
-  ; fst-commute₁ = λ _ → refl 
-  ; snd-commute₁ = λ _ → refl 
-  ; commute₂ = λ { ξ → record { eq = {! Cell.com-d ξ !} } } 
+                  ; {g = g} ξ (inj₂ y) → g y }
+  ; fst-commute₁ = λ _ → refl
+  ; snd-commute₁ = λ _ → refl
+  ; commute₂ = λ { ξ → record { eq = {! Cell.com-d ξ !} } }
   }
 
 record SubobjectOfInterest (M : Mealy X Y) : Set (suc zero) where
-  private 
+  private
     module M = Mealy M
   field
     e : M.E
-    fix-d   : ∀ {x} → M.d (x , e) ≡ e 
+    fix-d   : ∀ {x} → M.d (x , e) ≡ e
     se-surj : ∀ {y} → ∃[ x ] (M.s (x , e) ≡ y)
 
 
-fatto2 : (M : Mealy X Y) → (SOI : SubobjectOfInterest M) → Tabulator M 
-fatto2 {X = X} {Y = Y} M SOI = 
-  let module M = Mealy M 
+fatto2 : (M : Mealy X Y) → (SOI : SubobjectOfInterest M) → Tabulator M
+fatto2 {X = X} {Y = Y} M SOI =
+  let module M = Mealy M
       module SOI = SubobjectOfInterest SOI in
-    record 
+    record
       { tab = X × Y
       ; p = proj₁
       ; q = proj₂
@@ -181,7 +205,7 @@ fatto2 {X = X} {Y = Y} M SOI =
         { α = λ { _ → SOI.e }
         ; com-s = λ { {x , y} → {! proj₂ (SOI.se-surj {y}) !} }
         ; com-d = λ { {x , y} {tt} → SOI.fix-d }
-        } 
+        }
       ; universal = λ { {f = f} {g = g} ξ → < f , g > }
       ; fst-commute₁ = λ { ξ → refl }
       ; snd-commute₁ = λ { ξ → refl }
@@ -194,3 +218,17 @@ fatto2 {X = X} {Y = Y} M SOI =
   -- TODO:
   -- define companions and conjoints
   -- prove that they do (not) exist.
+  --
+  --
+
+record Companion {A B} (f : A → B) : Set (suc zero) where
+  field
+    comp : Mealy A B -- the loose arrow
+    Λ : Cell f id comp idMealy -- the first cell filling the square
+    Ξ : Cell id f idMealy comp -- the second cell filling the square
+  module Λ = Cell Λ
+  module Ξ = Cell Ξ
+  --field
+    --zig : Cell≡
+    --zag : Cell≡
+    
