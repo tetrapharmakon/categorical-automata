@@ -14,7 +14,26 @@ private
   variable
     X Y A B A' B' A'' B'' : Set
     lv rv lv' rv' : A → B
+{-
 
+A  -lh⟶  B
+|        |
+lv       rv
+↓        ↓
+A' -rh⟶  B'
+
+α : lh.E ⟶  rh.E such that 
+
+A × E ----⟨d,s⟩⟶  E × B
+  |                 |
+  | lv × α          | α × rv
+  |                 |
+  ↓                 ↓
+A' × F -⟨d',s'⟩⟶  F × B'
+
+commutes.
+
+-}
 record Cell (lv : A → A') (rv : B → B') (lh : Mealy A B) (rh : Mealy A' B') : Set (suc zero) where
   private
     module lh = Mealy lh 
@@ -50,6 +69,41 @@ idH h = record
   ; com-d = refl 
   }
 
+{-
+
+the tabulator of (X×E → E×Y) is a map τ : 1 → E (so, a point of E) such that 
+
+tab × 1 ---id- 1 × tab 
+   |             |          
+  p×τ           τ×q
+   |             |
+   ↓             ↓
+X × E -⟨d,s⟩⟶  E × Y
+
+with the property that every ξ like
+
+ U × 1 ---id---- 1 × U 
+   |             | 
+  f×e₀         e₀×g
+   |             |
+   ↓             ↓
+X × E -⟨d,s⟩⟶  E × Y
+
+factors as
+
+ U × 1 ---id---- 1 × U 
+   |             | 
+  _×!           !×_
+   |             |
+   ↓             ↓
+tab × 1 ---id- 1 × tab 
+   |             |          
+  p×τ           τ×q
+   |             |
+   ↓             ↓
+X × E -⟨d,s⟩⟶  E × Y
+-}
+
 record Tabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
   private
     module M = Mealy M
@@ -73,13 +127,13 @@ record CoTabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
   private
     module M = Mealy M
   field
-    tab : Set
-    p   : X → tab
-    q   : Y → tab
+    cotab : Set
+    p   : X → cotab
+    q   : Y → cotab
     τ   : Cell p q M idMealy
     --
     universal : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
-      (tab → U)
+      (cotab → U)
     fst-commute₁ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
       (universal ξ) ∘ p ≡ f
     snd-commute₁ : ∀ {U} {f : X → U} {g : Y → U} (ξ : Cell f g M idMealy) → 
@@ -91,7 +145,7 @@ record CoTabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
 
 fatto : (M : Mealy X Y) → CoTabulator M 
 fatto {X = X} {Y = Y} M = let module M = Mealy M in record 
-  { tab = X ⊎ Y 
+  { cotab = X ⊎ Y 
   ; p = inj₁ 
   ; q = inj₂ 
   ; τ = record 
@@ -106,20 +160,30 @@ fatto {X = X} {Y = Y} M = let module M = Mealy M in record
   ; commute₂ = λ { ξ → record { eq = refl } } 
   }
 
+record SubobjectOfInterest (M : Mealy X Y) : Set (suc zero) where
+  private 
+    module M = Mealy M
+  field
+    e : M.E
+    fix-d   : ∀ {x} → M.d (x , e) ≡ e 
+    se-surj : ∀ {y} → ∃[ x ] (M.s (x , e) ≡ y)
 
 
-fatto2 : (M : Mealy X Y) → Tabulator M 
-fatto2 {X = X} {Y = Y} M = let module M = Mealy M in record 
-  { tab = X × Y
-  ; p = proj₁
-  ; q = proj₂
-  ; τ = record
-    { α = {! !}
-    ; com-s = {! !}
-    ; com-d = {! !}
-    } 
-  ; universal = {! !}
-  ; fst-commute₁ = {! !}
-  ; snd-commute₁ = {! !}
-  ; commute₂ = {! !}
-  }
+fatto2 : (M : Mealy X Y) → (SOI : SubobjectOfInterest M) → Tabulator M 
+fatto2 {X = X} {Y = Y} M SOI = 
+  let module M = Mealy M 
+      module SOI = SubobjectOfInterest SOI in
+    record 
+      { tab = X × Y
+      ; p = proj₁
+      ; q = proj₂
+      ; τ = record
+        { α = λ { _ → SOI.e }
+        ; com-s = λ { {x , y} → {! proj₂ (SOI.se-surj {y}) !} }
+        ; com-d = λ { {x , y} {tt} → SOI.fix-d }
+        } 
+      ; universal = λ { {f = f} {g = g} ξ → < f , g > }
+      ; fst-commute₁ = λ { ξ → refl }
+      ; snd-commute₁ = λ { ξ → refl }
+      ; commute₂ = record { eq = λ { {x} → {! !} } } --impossible
+      }
