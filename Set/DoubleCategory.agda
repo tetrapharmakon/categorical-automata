@@ -336,6 +336,16 @@ record DoubleInitial : Set (suc zero) where
     universal₂ : ∀ {X Y} (M : Mealy X Y) → Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) idMealy M
     unique : ∀ {X Y} {M : Mealy X Y} {c : Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) idMealy M} → Cell≡ c (universal₂ M)
 
+
+record DoubleSum (A B : Set) : Set (suc zero) where
+  field
+    A⊎B : Set
+    in₁ : A → A⊎B
+    in₂ : B → A⊎B
+    universal₂ : ∀ {X Y A} {M : Mealy X Y} {f : A → X} {f' : A → Y} {ξ : Cell f f' idMealy M} → {! !}
+
+
+
 scimmia : DoubleTerminal 
 scimmia = record 
   { ⊤⊤ = ⊤ 
