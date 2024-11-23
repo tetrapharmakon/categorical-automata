@@ -1,6 +1,8 @@
 module Set.DoubleCategory where
 
 open import Set.Automata
+open import Set.LimitAutomata
+open import Set.Functors
 open import Level
 open import Function
 
@@ -216,15 +218,6 @@ fatto2 {X = X} {Y = Y} M SOI =
       ; commute₂ = record { eq = λ { {x} → {! !} } } --impossible
       }
 
-
-
-
-  -- TODO:
-  -- define companions and conjoints
-  -- prove that they do (not) exist.
-  --
-  --
-
 unitorᴸ : ∀ (M : Mealy X Y) → Cell id id M (M ⋄ idMealy)
 unitorᴸ M = record 
   { α = λ { x → tt , x } 
@@ -274,3 +267,58 @@ record Conjoint {A B} (f : A → B) : Set (suc zero) where
   field
     zig : Cell≡ (idH f) (Λ ⊙ᵥ Ξ)
     zag : Cell≡ (unitorᴿ⁻¹ conj ⊙ᵥ ((Ξ ⊙ₕ Λ) ⊙ᵥ unitorᴸ⁻¹ conj)) (idCell conj)
+
+
+_ₒ : (f : A → B) → Companion f 
+f ₒ = record 
+  { comp = record 
+    { E = ⊤ 
+    ; d = λ { x → tt } 
+    ; s = λ { (a , _) → f a } 
+    } 
+  ; Λ = record 
+    { α = λ { x → tt } 
+    ; com-s = refl 
+    ; com-d = refl 
+    } 
+  ; Ξ = record 
+    { α = λ { x → tt } 
+    ; com-s = refl 
+    ; com-d = refl 
+    } 
+  ; zig = record { eq = refl } 
+  ; zag = record { eq = refl } 
+  }
+
+-- I think conjoints do not exist
+--
+--
+ConjointExperiment : (f : A → B) → (a : A) → Conjoint f 
+ConjointExperiment {A} {B} f a = record 
+  { conj = record 
+    { E = A × B 
+    ; d = λ { (b , (a , b')) → a , f a } 
+    ; s = λ { (b , (a , b')) → a } 
+    } 
+  ; Λ = record 
+    { α = λ { tt → a , f a } 
+    ; com-s = λ { {x} {tt} → {! !} }
+    ; com-d = refl 
+    } 
+  ; Ξ = record 
+    { α = λ { x → tt } 
+    ; com-s = λ { {b} {(a , b')} → {! !} } -- b ≡ f a
+    ; com-d = refl 
+    }
+  ; zig = record { eq = refl } 
+  ; zag = record { eq = {! !} } 
+  }
+
+ConjointExperiment2 : (f : A → B) → Conjoint f 
+ConjointExperiment2 {A} {B} f = record 
+  { conj = {! mealify (P∞ A) !} 
+  ; Λ = {! !} 
+  ; Ξ = {! !} 
+  ; zig = {! !} 
+  ; zag = {! !} 
+  }
