@@ -313,14 +313,26 @@ scimmia = record
 --⊥×W≅⊥ : {A} → Bijection ? -- ⊥ (⊥ × A)
 --⊥×W≅⊥ = ?
 
+to : {A} → ⊥ → ⊥ × A
+to = λ { () }
+
+from : {A} → ⊥ × A → ⊥
+from = λ { () }
+
+bijTo : ∀ {A} {x} → ((to {A}) ∘ (from {A})) x ≡ x
+bijTo {x = () , a}
+
+bijFrom : ∀ {A} {x} → ((from {A}) ∘ (to {A})) x ≡ x
+bijFrom = refl
+
 coscimmia : DoubleInitial
 coscimmia = record 
   { Ø = ⊥ 
   ; universal₁ = λ { M → (λ { () }) , λ { () } }
   ; universal₂ = λ { M → record 
-    { α = λ { tt → {! !} }  -- depends on ⊥ × X ≡ ⊥
+    { α = {! !} 
     ; com-s = λ { {()} }
     ; com-d = λ { {()} } 
     } } 
-  ; unique = record { eq = λ { {x} → {! !} } }
+  ; unique = record { eq = λ { {tt} → {! !} } }
   }
