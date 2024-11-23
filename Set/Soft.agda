@@ -23,7 +23,7 @@ record SMoore (I : Set) (O : Set) : Set₁ where
 
 {-
        ┌─────────────┐   ┌─────────────┐
-       │             │   │  Soft      │
+       │             │   │  Soft       │
  ─ A ──┼─────────────┼─B─┼─────────────┼── C ───  is Soft
        │             │   │             │
        │  Mealy M    │   │ Moore N     │
