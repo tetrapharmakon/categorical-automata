@@ -319,7 +319,7 @@ ConjointExperiment2 {A} {B} f = record
   ; Ξ = {! !} 
   ; zig = {! !} 
   ; zag = {! !} 
-
+  }
 -- initials and terminals
 
 record DoubleTerminal : Set (suc zero) where
