@@ -6,7 +6,7 @@ open import Set.Functors
 open import Level
 open import Function
 
-
+open import Data.Empty
 open import Data.Product
 open import Data.Sum hiding (map)
 open import Data.Unit using (⊤; tt)
@@ -267,8 +267,6 @@ record Conjoint {A B} (f : A → B) : Set (suc zero) where
   field
     zig : Cell≡ (idH f) (Λ ⊙ᵥ Ξ)
     zag : Cell≡ (unitorᴿ⁻¹ conj ⊙ᵥ ((Ξ ⊙ₕ Λ) ⊙ᵥ unitorᴸ⁻¹ conj)) (idCell conj)
-
-
 _ₒ : (f : A → B) → Companion f 
 f ₒ = record 
   { comp = record 
@@ -321,4 +319,60 @@ ConjointExperiment2 {A} {B} f = record
   ; Ξ = {! !} 
   ; zig = {! !} 
   ; zag = {! !} 
+
+-- initials and terminals
+
+record DoubleTerminal : Set (suc zero) where
+  field
+    ⊤⊤ : Set
+    universal₁ : ∀ {X Y} (M : Mealy X Y) → (X → ⊤⊤) × (Y → ⊤⊤)
+    universal₂ : ∀ {X Y} (M : Mealy X Y) → Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) M idMealy
+    unique : ∀ {X Y} {M : Mealy X Y} {c : Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) M idMealy} → Cell≡ c (universal₂ M)
+
+record DoubleInitial : Set (suc zero) where
+  field
+    Ø : Set
+    universal₁ : ∀ {X Y} (M : Mealy X Y) → (Ø → X) × (Ø → Y)
+    universal₂ : ∀ {X Y} (M : Mealy X Y) → Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) idMealy M
+    unique : ∀ {X Y} {M : Mealy X Y} {c : Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) idMealy M} → Cell≡ c (universal₂ M)
+
+scimmia : DoubleTerminal 
+scimmia = record 
+  { ⊤⊤ = ⊤ 
+  ; universal₁ = λ { M → (λ { x → tt }) , λ { x → tt } }
+  ; universal₂ = λ { M → record 
+    { α = λ { x → tt } 
+    ; com-s = refl 
+    ; com-d = refl } 
+    } 
+  ; unique = record { eq = refl } 
+  }
+
+--open import Function.Bundles using (Bijection)
+
+--⊥×W≅⊥ : {A} → Bijection ? -- ⊥ (⊥ × A)
+--⊥×W≅⊥ = ?
+
+to : {A} → ⊥ → ⊥ × A
+to = λ { () }
+
+from : {A} → ⊥ × A → ⊥
+from = λ { () }
+
+bijTo : ∀ {A} {x} → ((to {A}) ∘ (from {A})) x ≡ x
+bijTo {x = () , a}
+
+bijFrom : ∀ {A} {x} → ((from {A}) ∘ (to {A})) x ≡ x
+bijFrom = refl
+
+coscimmia : DoubleInitial
+coscimmia = record 
+  { Ø = ⊥ 
+  ; universal₁ = λ { M → (λ { () }) , λ { () } }
+  ; universal₂ = λ { M → record 
+    { α = {! !} 
+    ; com-s = λ { {()} }
+    ; com-d = λ { {()} } 
+    } } 
+  ; unique = record { eq = λ { {tt} → {! !} } }
   }
