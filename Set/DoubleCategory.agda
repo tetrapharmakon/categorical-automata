@@ -246,6 +246,24 @@ unitorᴿ⁻¹ M = record
   ; com-d = {! !} 
   }
 
+assoc : ∀ {M : Mealy X Y} {N : Mealy Y Z} {P : Mealy Z A} → Cell id id (P ⋄ (N ⋄ M)) ((P ⋄ N) ⋄ M)
+assoc {M = M} {N = N} {P = P} = record 
+  { α = λ { ((e , f) , p) → e , f , p } 
+  ; com-s = refl 
+  ; com-d = refl 
+  } where module M = Mealy M
+          module N = Mealy N
+          module P = Mealy P
+
+assoc⁻¹ : ∀ {M : Mealy X Y} {N : Mealy Y Z} {P : Mealy Z A} → Cell id id ((P ⋄ N) ⋄ M) (P ⋄ (N ⋄ M)) 
+assoc⁻¹ {M = M} {N = N} {P = P} = record 
+  { α = λ { (e , f , p) → (e , f) , p } 
+  ; com-s = refl 
+  ; com-d = refl 
+  } where module M = Mealy M
+          module N = Mealy N
+          module P = Mealy P
+
 record Companion {A B} (f : A → B) : Set (suc zero) where
   field
     comp : Mealy A B -- the loose arrow
@@ -337,12 +355,12 @@ record DoubleInitial : Set (suc zero) where
     unique : ∀ {X Y} {M : Mealy X Y} {c : Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) idMealy M} → Cell≡ c (universal₂ M)
 
 
-record DoubleSum (A B : Set) : Set (suc zero) where
-  field
-    A⊎B : Set
-    in₁ : A → A⊎B
-    in₂ : B → A⊎B
-    universal₂ : ∀ {X Y A} {M : Mealy X Y} {f : A → X} {f' : A → Y} {ξ : Cell f f' idMealy M} → {! !}
+--record DoubleSum (A B : Set) : Set (suc zero) where
+  --field
+    --A⊎B : Set
+    --in₁ : A → A⊎B
+    --in₂ : B → A⊎B
+    --universal₂ : ∀ {X Y A} {M : Mealy X Y} {f : A → X} {f' : A → Y} {ξ : Cell f f' idMealy M} {g : B → X} {g' : B → Y} {θ : Cell g g' idMealy M} → {! !}
 
 
 
@@ -386,3 +404,37 @@ coscimmia = record
     } } 
   ; unique = record { eq = λ { {tt} → {! !} } }
   }
+
+
+record DoubleMonad {A : Set} : Set (suc zero) where 
+  field
+    M : Mealy A A
+    η : Cell id id idMealy M
+    μ : Cell id id (M ⋄ M) M
+    unitᴸ : Cell≡ (unitorᴸ M ⊙ᵥ ((η ⊙ₕ idCell M) ⊙ᵥ μ)) (idCell M)
+    unitᴿ : Cell≡ (unitorᴿ⁻¹ M ⊙ᵥ ((idCell M ⊙ₕ η) ⊙ᵥ μ)) (idCell M)
+    μ-assoc : Cell≡ ((idCell M ⊙ₕ μ) ⊙ᵥ μ) (assoc⁻¹ ⊙ᵥ ((μ ⊙ₕ idCell M) ⊙ᵥ μ))
+
+-- fleshout di una monade
+esempio : {A : Set} 
+  (M : Mealy A A) 
+  (e : ⊤ → Mealy.E M) 
+  (m : Mealy.E M × Mealy.E M → Mealy.E M) → DoubleMonad {A}
+esempio M e m = record 
+  { M = M -- M : A × E --⟨d,s⟩-→ E × A
+  ; η = record 
+    { α = e -- ⊤ → E
+    ; com-s = {! !} -- ∀ {x : A} → s (x , e) ≡ x
+    ; com-d = {! !} -- ∀ {x : A} → d (x , e) ≡ e
+    } 
+  ; μ = record 
+    { α = m 
+    ; com-s = λ { {a} {e , e'} → {! !} }
+    -- s (a , m (e , e')) ≡ s (s (a , e) , e')
+    ; com-d = λ { {a} {e , e'} → {! !} }
+    -- d (a , m (e , e')) ≡ m (d (a , e) , d (s (a , e) , e'))
+    } 
+  ; unitᴸ = record { eq = {! !} } -- m (e , x) ≡ x
+  ; unitᴿ = record { eq = {! !} } -- m (x , e) ≡ x
+  ; μ-assoc = record { eq = λ { {e , e' , e''} → {! !} } } -- 
+  } where module M = Mealy M
