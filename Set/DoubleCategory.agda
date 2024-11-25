@@ -418,23 +418,42 @@ record DoubleMonad {A : Set} : Set (suc zero) where
 -- fleshout di una monade
 esempio : {A : Set} 
   (M : Mealy A A) 
-  (e : ⊤ → Mealy.E M) 
+  (e₀ : ⊤ → Mealy.E M) 
   (m : Mealy.E M × Mealy.E M → Mealy.E M) → DoubleMonad {A}
-esempio M e m = record 
-  { M = M -- M : A × E --⟨d,s⟩-→ E × A
+esempio M e₀ m = record 
+  { M = M -- M : A × E --⟨d,s⟩-→ E × A; 
+    -- d : A × E → E | action of List A on E
+    -- s : A × E → A | action of E on A 
   ; η = record 
-    { α = e -- ⊤ → E
-    ; com-s = {! !} -- ∀ {x : A} → s (x , e) ≡ x
-    ; com-d = {! !} -- ∀ {x : A} → d (x , e) ≡ e
+    { α = e₀ -- ⊤ → E
+    ; com-s = {!  !} 
+    -- ∀ {a : A} → s (a , e) ≡ a
+    -- a ◁ e ≡ a
+    ; com-d = {! !} 
+    -- ∀ {a : A} → d (a , e) ≡ e
+    -- the identity of (E, ∙) is a fixpoint for d
     } 
   ; μ = record 
     { α = m 
     ; com-s = λ { {a} {e , e'} → {! !} }
     -- s (a , m (e , e')) ≡ s (s (a , e) , e')
+    -- s (a , e ∙ e') ≡ s (s (a , e) , e' )
+    -- a ◁ (e ∙ e') ≡ (a ◁ e) ◁ e'
     ; com-d = λ { {a} {e , e'} → {! !} }
     -- d (a , m (e , e')) ≡ m (d (a , e) , d (s (a , e) , e'))
+    -- a ⊛ (e ∙ e') ≡ (a ⊛ e) ∙ ((a ◁ e) ⊛ e')
     } 
   ; unitᴸ = record { eq = {! !} } -- m (e , x) ≡ x
   ; unitᴿ = record { eq = {! !} } -- m (x , e) ≡ x
-  ; μ-assoc = record { eq = λ { {e , e' , e''} → {! !} } } -- 
+  ; μ-assoc = record { eq = λ { {e , e' , e''} → {! !} } } 
+    -- PROBABLY m (e , m (e' , e'')) ≡ m (m(e , e') , e'')
   } where module M = Mealy M
+    -- a ⊛ (e ∙ e') ≡ (a ⊛ e) ∙ ((a ◁ e) ⊛ e')
+    -- it's a twisted homomorphism!
+    -- a ⊛ (e ∙ e') ≡ (a ⊛ e) ∙ aᵉ ⊛ e'
+    -- estensione alle liste?
+    -- (a ∷ b) ⊛ (e ∙ e') ≡ ⟨ definition ⟩
+    -- a ⊛ (b ⊛ (e ∙ e')) ≡ ⟨ cong a ⊛ _ ⟩
+    -- a ⊛ ((b ⊛ e) ∙ (bᵉ ⊛ e'))
+    -- a ⊛ (b ⊛ e) ∙ (a ◁ (b ⊛ e)) ⊛ (bᵉ ⊛ e'))
+    -- ([a,b] ⊛ e) ∙ ([aᵇᵒᵉ,bᵉ] ⊛ e')
