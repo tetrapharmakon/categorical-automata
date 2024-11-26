@@ -42,6 +42,8 @@ record rotThirteenoid : Set (suc zero) where
     mistero : ∀ {a e e'} → a ⊗ (e ∙ e') ≡ ((a ⊗ e) ∙ ((a ⊙ e) ⊗ e'))
 
   e0 = Monoid.e (isMonoid monE)
+  field
+    fix : ∀ {a} → a ⊗ e0 ≡ e0 
 
   d∞ : List A → E → E 
   d∞ [] e = e
@@ -50,6 +52,10 @@ record rotThirteenoid : Set (suc zero) where
   s∞ : List A → E → List A 
   s∞ [] e = []
   s∞ (a ∷ as) e = (a ⊙ (d∞ as e)) ∷ (s∞ as e)
+
+  lemmuzzo : ∀ {as} → d∞ as e0 ≡ e0
+  lemmuzzo {[]} = refl
+  lemmuzzo {x ∷ as} = trans (cong (λ t → x ⊗ t) lemmuzzo) fix
 
   _⊗⋆_ : List A → E → E 
   as ⊗⋆ e = d∞ as e
@@ -92,11 +98,12 @@ record rotThirteenoid : Set (suc zero) where
     { _∙_ = λ { (x , as) (x' , bs) → (M._∙_ x (as ⊗⋆ x')) , (as ⊙⋆ x') ++ bs }
     ; e = e0 , [] 
     ; unitᴿ = λ { {x , as} → 
-        begin {! !} 
+        begin 
+          (x M.∙ (as ⊗⋆ e0)) , (as ⊙⋆ e0) ++ [] 
             ≡⟨ cong (λ t → (M._∙_ x (d∞ as e)) , t) (++-identityʳ _) ⟩
-          {! !}
-            ≡⟨ {! !} ⟩
-          {! !} 
+          (x M.∙ d∞ _ e0) , s∞ as e0
+            ≡⟨ cong₂ _,_ (trans (cong (λ t → x M.∙ t) lemmuzzo) unitᴿ) {! !} ⟩
+          x , as 
             ∎ }
     ; unitᴸ = λ { {x , as} → cong (λ t → t , as) unitᴸ }
     ; assoc = λ { {x , as} {y , bs} {z , cs} → {! !} }
