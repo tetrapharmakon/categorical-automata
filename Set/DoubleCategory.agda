@@ -475,21 +475,55 @@ record _isRan_along_ (Ran : Mealy B C) (G : Mealy A C) (F : Mealy A B) : Set (su
     commute : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell≡ ξ ((idCell F ⊙ₕ universal H ξ) ⊙ᵥ ρ)
     unique : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) (c : Cell id id H Ran) (pc : Cell≡ ξ ((idCell F ⊙ₕ c) ⊙ᵥ ρ)) → Cell≡ c (universal H ξ)
 
+Ran_⟨_⟩ : (F : Mealy A B) (G : Mealy A C) → Mealy B C 
+Ran_⟨_⟩ {A = A} F G = record 
+  { E = A × (F.E → G.E)
+  ; d = λ { (b , a , u) → a , u }
+  ; s = λ { (b , a , u) → G.s (a , u {! !}) }
+  } where module F = Mealy F 
+          module G = Mealy G
+
 module _ {F : Mealy A B} {G : Mealy A C} {R : Mealy B C} where
   
   module F = Mealy F 
   module G = Mealy G
   module R = Mealy R
 
-  fallo : (ρ : F.E → R.E → G.E)
+
+  fallo : (H : Mealy B C) → (ρ : F.E → R.E → G.E)
     → R isRan G along F 
-  fallo ρ = record 
+  fallo H ρ = record 
     { ρ = record 
       { α = λ { (f , r) → ρ f r } -- ρ : F.E × R.E → G.E 
       ; com-s = λ { {a} {f , r} → {! !} } -- Goal: G.s (a , ρ f r) ≡ R.s (F.s (a , f) , r)
       ; com-d = λ { {a} {f , r} → {! !} } -- Goal: G.d (a , ρ f r) ≡ ρ (F.d (a , f)) (R.d (F.s (a , f) , r))
       } 
-    ; universal = {! !} 
-    ; commute = {! !} 
-    ; unique = {! !} 
+    ; universal = λ { H ξ → let module H = Mealy H 
+                                module ξ = Cell ξ in record 
+      { α = {!ν !} -- Goal: ν : H.E → R.E
+      ; com-s = λ { {b} {h} → {! !} } -- Goal: R.s (b , ν h) ≡ H.s (b , h)
+      ; com-d = λ { {b} {h} → {! !} } -- Goal: R.d (b , ν h) ≡ ν (H.d (b , h)) 
+      } } 
+    ; commute = λ { H ξ → let module ξ = Cell ξ in record { eq = λ { {f , h} → {! !} } } } -- Goal: ξ.α (f , h) ≡ ρ f (ν h)
+    ; unique = λ { H ξ c pc → let module ξ = Cell ξ 
+                                  module c = Cell c
+      in record { eq = λ { {h} → {! !} } } } -- Goal: c.α h ≡ ν h
     }
+
+
+
+
+record LeftExtension (F : Mealy A B) (G : Mealy A C) : Set (suc zero) where
+  field
+    Lan : Mealy C B 
+    η : Cell id id F (Lan ⋄ G)
+    universal : ∀ (H : Mealy C B) (ξ : Cell id id F (H ⋄ G)) → Cell id id Lan H
+    commute : ∀ (H : Mealy C B) (ξ : Cell id id F (H ⋄ G)) → Cell≡ ξ (η ⊙ᵥ (idCell G ⊙ₕ universal H ξ)) -- ((idCell F ⊙ₕ universal H ξ) ⊙ᵥ ρ)
+    unique : ∀ (H : Mealy C B) (ξ : Cell id id F (H ⋄ G)) (c : Cell id id Lan H) (pc : Cell≡ ξ (η ⊙ᵥ (idCell G ⊙ₕ universal H ξ))) → Cell≡ c (universal H ξ)
+
+--record _isRan_along_ (Ran : Mealy B C) (G : Mealy A C) (F : Mealy A B) : Set (suc zero) where
+  --field
+    --ρ : Cell id id (Ran ⋄ F) G
+    --universal : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell id id H Ran
+    --commute : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell≡ ξ ((idCell F ⊙ₕ universal H ξ) ⊙ᵥ ρ)
+    --unique : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) (c : Cell id id H Ran) (pc : Cell≡ ξ ((idCell F ⊙ₕ c) ⊙ᵥ ρ)) → Cell≡ c (universal H ξ)
