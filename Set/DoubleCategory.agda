@@ -457,3 +457,39 @@ esempio M e₀ m = record
     -- a ⊛ ((b ⊛ e) ∙ (bᵉ ⊛ e'))
     -- a ⊛ (b ⊛ e) ∙ (a ◁ (b ⊛ e)) ⊛ (bᵉ ⊛ e'))
     -- ([a,b] ⊛ e) ∙ ([aᵇᵒᵉ,bᵉ] ⊛ e')
+    --
+    --
+    --
+record RightExtension (F : Mealy A B) (G : Mealy A C) : Set (suc zero) where
+  field
+    Ran : Mealy B C 
+    ρ : Cell id id (Ran ⋄ F) G
+    universal : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell id id H Ran
+    commute : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell≡ ξ ((idCell F ⊙ₕ universal H ξ) ⊙ᵥ ρ)
+    unique : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) (c : Cell id id H Ran) (pc : Cell≡ ξ ((idCell F ⊙ₕ c) ⊙ᵥ ρ)) → Cell≡ c (universal H ξ)
+
+record _isRan_along_ (Ran : Mealy B C) (G : Mealy A C) (F : Mealy A B) : Set (suc zero) where
+  field
+    ρ : Cell id id (Ran ⋄ F) G
+    universal : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell id id H Ran
+    commute : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell≡ ξ ((idCell F ⊙ₕ universal H ξ) ⊙ᵥ ρ)
+    unique : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) (c : Cell id id H Ran) (pc : Cell≡ ξ ((idCell F ⊙ₕ c) ⊙ᵥ ρ)) → Cell≡ c (universal H ξ)
+
+module _ {F : Mealy A B} {G : Mealy A C} {R : Mealy B C} where
+  
+  module F = Mealy F 
+  module G = Mealy G
+  module R = Mealy R
+
+  fallo : (ρ : F.E → R.E → G.E)
+    → R isRan G along F 
+  fallo ρ = record 
+    { ρ = record 
+      { α = λ { (f , r) → ρ f r } -- ρ : F.E × R.E → G.E 
+      ; com-s = λ { {a} {f , r} → {! !} } -- Goal: G.s (a , ρ f r) ≡ R.s (F.s (a , f) , r)
+      ; com-d = λ { {a} {f , r} → {! !} } -- Goal: G.d (a , ρ f r) ≡ ρ (F.d (a , f)) (R.d (F.s (a , f) , r))
+      } 
+    ; universal = {! !} 
+    ; commute = {! !} 
+    ; unique = {! !} 
+    }
