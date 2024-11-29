@@ -84,26 +84,32 @@ record DoubleComonad {A : Set} : Set (suc zero) where
     counitᴿ : Cell≡ (σ ⊙ᵥ ((ε ⊙ₕ idCell M) ⊙ᵥ unitorᴸ⁻¹ M)) (idCell M)
     σ-coassoc : Cell≡ (σ ⊙ᵥ (idCell M ⊙ₕ σ)) ((σ ⊙ᵥ (σ ⊙ₕ idCell M)) ⊙ᵥ assoc)
 
+
+candidateComonad : {X : Set} → Mealy A A
+candidateComonad {X = X} = record 
+  { E = X
+  ; d = {! !} -- can be any action
+  ; s = proj₁ 
+  }
+
 -- prolly only the canonical comonad structure?
 fleshoutComonad : {A} → 
-  (M : Mealy A A) → 
-  (σ : Mealy.E M → Mealy.E M × Mealy.E M) →
   DoubleComonad {A}
-fleshoutComonad M σ = record 
-  { M = M
+fleshoutComonad = record 
+  { M = candidateComonad 
   ; ε = record 
     { α = λ { x → tt } 
-    ; com-s = {! !} -- solo se s è la proiezione!
+    ; com-s = refl -- solo se s è la proiezione!
     ; com-d = refl 
     } 
   ; σ = record 
-    { α = σ -- λ { x → x , x } 
-    ; com-s = λ { {a} {e} → {! !} }
+    { α = λ { x → x , x } 
+    ; com-s = λ { {a} {e} → refl }
 -- M.s (M.s (a , proj₁ (σ e)) , proj₂ (σ e)) ≡ M.s (a , e)
-    ; com-d = λ { {a} {e} → {! !} }
+    ; com-d = λ { {a} {e} → refl }
 -- (M.d (a , proj₁ (σ e)) , M.d (M.s (a , proj₁ (σ e)) , proj₂ (σ e))) ≡ σ (M.d (a , e))
     } 
-  ; counitᴸ = {! !} 
-  ; counitᴿ = {! !} 
-  ; σ-coassoc = {! !} 
-  } where module M = Mealy M
+  ; counitᴸ = record { eq = refl } 
+  ; counitᴿ = record { eq = refl } 
+  ; σ-coassoc = record { eq = λ { {x} → refl } }
+  } 
