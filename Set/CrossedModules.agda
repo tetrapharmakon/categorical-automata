@@ -1,3 +1,4 @@
+{-# OPTIONS --allow-unsolved-metas #-} 
 module Set.CrossedModules where
 
 open import Level
@@ -7,13 +8,19 @@ open import Data.List.Properties
 open import Relation.Binary.PropositionalEquality
 open ≡-Reasoning
 
+open import Set.Automata
+
+private
+  variable
+    A B C X Y Z M₀ : Set
+
 record Monoid (Carrier : Set) : Set (suc zero) where
   field
     _∙_ : Carrier → Carrier → Carrier
-    e : Carrier
+    u : Carrier
     --
-    unitᴿ : ∀ {x : Carrier} → x ∙ e ≡ x
-    unitᴸ : ∀ {x : Carrier} → e ∙ x ≡ x
+    unitᴿ : ∀ {x : Carrier} → x ∙ u ≡ x
+    unitᴸ : ∀ {x : Carrier} → u ∙ x ≡ x
     assoc : ∀ {x y z : Carrier} → (x ∙ y) ∙ z ≡ x ∙ (y ∙ z)
 
 record IsMonoid A : Set (suc zero) where
@@ -21,6 +28,20 @@ record IsMonoid A : Set (suc zero) where
     isMonoid : Monoid A
 
 open IsMonoid
+
+record _actsOnᴸ_ (M : Monoid M₀) (A : Set) : Set (suc zero) where
+  open module M = Monoid M
+  field
+    act : M₀ → A → A 
+    unit : ∀ {a} → act u a ≡ a
+    assoc : ∀ {a x y} → act x (act y a) ≡ act (x ∙ y) a
+
+record _actsOnᴿ_ (M : Monoid M₀) (A : Set) : Set (suc zero) where 
+  open module M = Monoid M
+  field
+    act : A → M₀ → A 
+    unit : ∀ {a} → act a u ≡ a
+    assoc : ∀ {a x y} → act (act a x) y ≡ act a (x ∙ y)
 
 --record LeftModule {M : Monoid} : Set (suc zero) where
   --open module M = Monoid M
@@ -31,9 +52,9 @@ open IsMonoid
     --act∙ : ∀ {x y : M.Carrier} {s : S} → (M._∙_ x y) ⋆ s ≡ x ⋆ (y ⋆ s)
 
 
-record rotThirteenoid : Set (suc zero) where
+record MonadInMealy : Set (suc zero) where
   field
-    E A : Set
+    E : Set
     _⊗_ : A → E → E 
     _⊙_ : A → E → A 
     monE : IsMonoid E
@@ -41,7 +62,7 @@ record rotThirteenoid : Set (suc zero) where
   field
     mistero : ∀ {a e e'} → a ⊗ (e ∙ e') ≡ ((a ⊗ e) ∙ ((a ⊙ e) ⊗ e'))
 
-  e0 = Monoid.e (isMonoid monE)
+  e0 = Monoid.u (isMonoid monE)
   field
     fix : ∀ {a} → a ⊗ e0 ≡ e0 
 
@@ -96,11 +117,11 @@ record rotThirteenoid : Set (suc zero) where
   BiCrossed : Monoid (E × List A)
   BiCrossed = record 
     { _∙_ = λ { (x , as) (x' , bs) → (M._∙_ x (as ⊗⋆ x')) , (as ⊙⋆ x') ++ bs }
-    ; e = e0 , [] 
+    ; u = e0 , [] 
     ; unitᴿ = λ { {x , as} → 
         begin 
           (x M.∙ (as ⊗⋆ e0)) , (as ⊙⋆ e0) ++ [] 
-            ≡⟨ cong (λ t → (M._∙_ x (d∞ as e)) , t) (++-identityʳ _) ⟩
+            ≡⟨ cong (λ t → (M._∙_ x (d∞ as u)) , t) (++-identityʳ _) ⟩
           (x M.∙ d∞ _ e0) , s∞ as e0
             ≡⟨ cong₂ _,_ (trans (cong (λ t → x M.∙ t) lemmuzzo) unitᴿ) {! !} ⟩
           x , as 
@@ -108,11 +129,12 @@ record rotThirteenoid : Set (suc zero) where
     ; unitᴸ = λ { {x , as} → cong (λ t → t , as) unitᴸ }
     ; assoc = λ { {x , as} {y , bs} {z , cs} → {! !} }
     } where open module M = Monoid (isMonoid monE)
-  --mistero2 : ∀ {a1 a2 : A} {e e' : E} → d∞ (a1 ∷ a2 ∷ [] , m (e , e')) ≡ {! d (a1 , d (a2 , m (e , e'))) !}
-  --mistero2 {a1} {a2} {e} {e'} = 
-    --begin d (a1 , d∞ (a2 ∷ [] , m (e , e'))) 
-            --≡⟨ cong (λ t → d (a1 , t)) mistero ⟩
-          --d (a1 , m (d (a2 , e) , d (s (a2 , e) , e'))) 
-            --≡⟨ mistero ⟩
-          --m (d (a1 , d (a2 , e)) , d (s (a1 , d (a2 , e)) , d (s (a2 , e) , e'))) 
-            --∎
+
+  theorem : {U : Mealy X A} → BiCrossed actsOnᴸ (Mealy.E U)
+  theorem {U = U} = record 
+    { act = λ { (m , as) x → {!  (as ⊗⋆ m) !} } -- e ∙ d(as , x) ? 
+    ; unit = {! !} 
+    ; assoc = {! !} 
+    } where module U = Mealy U
+
+open MonadInMealy
