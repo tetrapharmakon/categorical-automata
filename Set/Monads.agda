@@ -187,6 +187,12 @@ s∞ M [] e = []
 s∞ M (x ∷ xs) e = M.s (x , dExt (DoubleMonad.M M) (xs , e)) ∷ s∞ M xs e 
   where module M = Mealy (DoubleMonad.M M)
 
+s∞-acta : {M : DoubleMonad {A}} {as : List A} {x y : Mealy.E (DoubleMonad.M M)} → s∞ M (s∞ M as y) x ≡ s∞ M as (Cell.α (DoubleMonad.μ M) (x , y))
+s∞-acta {M = M} {as = []} {x} {y} = refl
+s∞-acta {M = M} {as = a ∷ as} {x} {y} = cong₂ _∷_ (cong MM.s (cong₂ _,_ {! !} {! !})) s∞-acta
+  where module MM = Mealy (DoubleMonad.M M)
+        module M = DoubleMonad M
+
 ListMonoid : {A} → IsMonoid (List A)
 ListMonoid {A = A} = record { isMonoid = record 
   { _∙_ = λ { xs ys → xs ++ ys } 
@@ -215,17 +221,26 @@ ListActsOnE X = record
 rallo : {M : DoubleMonad {A}} {as : List A} → s∞ M as (Cell.α (DoubleMonad.η M) tt) ≡ as
 rallo {A} {M} {[]} = refl
 rallo {A} {M} {x ∷ as} = 
-  begin {! !} ≡⟨ cong₂ _∷_ refl rallo ⟩
-        {! !} ≡⟨ cong (λ t → M.s (x , t) ∷ as) {! !} ⟩
-        {! !} ≡⟨ {! !} ⟩
-        {! !} ∎
-  where module M = Mealy (DoubleMonad.M M)
+  begin _ ≡⟨ cong₂ _∷_ refl rallo ⟩
+        _ ≡⟨ cong (λ t → MM.s (x , t) ∷ as) dExt-fixpoint ⟩
+        _ ≡⟨ cong (λ t → t ∷ as) (Cell.com-s M.η) ⟩
+        _ ∎
+  where module MM = Mealy (DoubleMonad.M M)
+        module M = DoubleMonad M
 
---s (x , dExt (as , M.η tt)) ∷ as ≡ x ∷ as
+sbollo : {M : DoubleMonad {A}} {as : List A} {x y : Mealy.E (DoubleMonad.M M)} → s∞ M (s∞ M as y) x ≡ s∞ M as (Cell.α (DoubleMonad.μ M) (x , y))
+sbollo {M = M} {as = []} {x} {y} = refl
+sbollo {M = M} {as = a ∷ as} {x} {y} = cong₂ (_∷_) {! !} {! !}
+  where module MM = Mealy (DoubleMonad.M M)
+        module M = DoubleMonad M
+
+--s (s (a , dExt M (as , y)) , dExt M (s∞ M as y , x)) ∷ s∞ M (s∞ M as y) x
+--≡
+--s (a , dExt M (as , Cell.α M.μ (x , y))) ∷ s∞ M as (Cell.α M.μ (x , y))
 EactsOnLists : (M : DoubleMonad {A}) → IsMonoid.isMonoid (Emonoid M) actsOnᴸ (List A)
 EactsOnLists M = record 
   { act = λ x y → s∞ M y x
-  ; unit = {! !}
+  ; unit = rallo
   ; assoc = {! !} 
   } where module M = DoubleMonad M
           module MM = Mealy (DoubleMonad.M M)
