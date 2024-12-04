@@ -16,6 +16,7 @@ open import Data.List.NonEmpty
 open import Data.Sum hiding (map)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality
+open ≡-Reasoning
 
 private
   variable
@@ -160,15 +161,21 @@ dExt M ([] , e) = e
 dExt M (x ∷ xs , e) = M.d (x , dExt M (xs , e))
   where module M = Mealy M
 
+dExt-fixpoint : {M : DoubleMonad {A}} {as : List A} → dExt (DoubleMonad.M M) (as , Cell.α (DoubleMonad.η M) tt) ≡ Cell.α (DoubleMonad.η M) tt 
+dExt-fixpoint {as = []} = refl
+dExt-fixpoint {M = M} {as = x ∷ as} = trans (cong (λ t → MM.d (x , t)) dExt-fixpoint) (Cell.com-d M.η)
+  where module M = DoubleMonad M
+        module MM = Mealy (DoubleMonad.M M)
+
 unitR : (x : List A) → x ++ [] ≡ x 
 unitR [] = refl 
 unitR (x ∷ xs) = cong (λ t → x ∷ t) (unitR xs)
 
-dExt-assoc : {X : Mealy A B} {a : Mealy.E X} {x y : List A} → dExt X (y , dExt X (x , a)) ≡ dExt X (x ++ y , a)
+dExt-assoc : {X : Mealy A B} {a : Mealy.E X} {x y : List A} → dExt X (x , dExt X (y , a)) ≡ dExt X (x ++ y , a)
 dExt-assoc {a = e} {x = []} {y = bs} = refl
 dExt-assoc {X = X} {a = e} {x = a ∷ as} {y = []} = cong (λ t → X.d (a , dExt X (t , e))) (sym (unitR as))
   where module X = Mealy X
-dExt-assoc {X = X} {a = e} {x = a ∷ as} {y = b ∷ bs} = {! !}
+dExt-assoc {X = X} {a = e} {x = a ∷ as} {y = b ∷ bs} = cong (λ t → X.d (a , t)) dExt-assoc
   where module X = Mealy X
 
 sExt : (M : Mealy A B) → (List⁺ A) × Mealy.E M → B 
@@ -198,25 +205,31 @@ Emonoid M = record { isMonoid = record
   ; assoc = λ { {x} {y} {z} → sym (Cell≡.eq M.μ-assoc) }
   } } where module M = DoubleMonad M
 
-ListActsOnE : (X : Mealy A B) → (IsMonoid.isMonoid (ListMonoid {A})) actsOnᴿ (Mealy.E X)
+ListActsOnE : (X : Mealy A B) → (IsMonoid.isMonoid (ListMonoid {A})) actsOnᴸ (Mealy.E X)
 ListActsOnE X = record 
-  { act = λ { e as → dExt X (as , e) } 
+  { act = λ { as e → dExt X (as , e) } 
   ; unit = refl 
-  ; assoc = {! !} 
+  ; assoc = dExt-assoc 
   }
 
+rallo : {M : DoubleMonad {A}} {as : List A} → s∞ M as (Cell.α (DoubleMonad.η M) tt) ≡ as
+rallo {A} {M} {[]} = refl
+rallo {A} {M} {x ∷ as} = 
+  begin {! !} ≡⟨ cong₂ _∷_ refl rallo ⟩
+        {! !} ≡⟨ cong (λ t → M.s (x , t) ∷ as) {! !} ⟩
+        {! !} ≡⟨ {! !} ⟩
+        {! !} ∎
+  where module M = Mealy (DoubleMonad.M M)
 
+--s (x , dExt (as , M.η tt)) ∷ as ≡ x ∷ as
 EactsOnLists : (M : DoubleMonad {A}) → IsMonoid.isMonoid (Emonoid M) actsOnᴸ (List A)
 EactsOnLists M = record 
   { act = λ x y → s∞ M y x
-  ; unit = λ { {[]} → refl
-             ; {x ∷ xs} → {! !} }
+  ; unit = {! !}
   ; assoc = {! !} 
   } where module M = DoubleMonad M
           module MM = Mealy (DoubleMonad.M M)
-          --_⊙_ : A → Mealy.E (DoubleMonad.M M) → A 
-          --a ⊙ e = Mealy.s (DoubleMonad.M M) (? , ?)
-          --
+
 bicrossedMonoid : (M : DoubleMonad {A}) → Monoid (Mealy.E (DoubleMonad.M M) × List A) 
 bicrossedMonoid M = record
   { _∙_ = λ { (x , as) (x' , bs) → {! !} } -- (M._∙_ x (as ⊗⋆ x')) , (as ⊙⋆ x') ++ bs }
