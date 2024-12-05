@@ -155,7 +155,7 @@ fleshoutAlgebra a M α = record
   --(List A × Mealy.E (DoubleMonad.M M)) × Mealy.E (Algebra.a a) → Mealy.E (Algebra.a a)
 --thing a M ((as , e) , s) = Cell.α θ (s , {! MonadInMealy.d∞ as e !})
   --where open module a = Algebra M
-
+ 
 dExt : (M : Mealy A B) → (List A) × Mealy.E M → Mealy.E M 
 dExt M ([] , e) = e
 dExt M (x ∷ xs , e) = M.d (x , dExt M (xs , e))
@@ -199,7 +199,7 @@ ListMonoid {A = A} = record { isMonoid = record
   ; u = [] 
   ; unitᴿ = λ { {x} → unitR x }
   ; unitᴸ = λ { {x} → refl }
-  ; assoc = {! !} 
+  ; assoc = {!  !} 
   } }
 
 Emonoid : (M : DoubleMonad {A}) → IsMonoid (Mealy.E (DoubleMonad.M M))
@@ -230,18 +230,15 @@ rallo {A} {M} {x ∷ as} =
 
 sbollo : {M : DoubleMonad {A}} {as : List A} {x y : Mealy.E (DoubleMonad.M M)} → s∞ M (s∞ M as y) x ≡ s∞ M as (Cell.α (DoubleMonad.μ M) (x , y))
 sbollo {M = M} {as = []} {x} {y} = refl
-sbollo {M = M} {as = a ∷ as} {x} {y} = cong₂ (_∷_) {! !} {! !}
+sbollo {M = M} {as = a ∷ as} {x} {y} = cong₂ (_∷_) {! !} s∞-acta
   where module MM = Mealy (DoubleMonad.M M)
         module M = DoubleMonad M
 
---s (s (a , dExt M (as , y)) , dExt M (s∞ M as y , x)) ∷ s∞ M (s∞ M as y) x
---≡
---s (a , dExt M (as , Cell.α M.μ (x , y))) ∷ s∞ M as (Cell.α M.μ (x , y))
 EactsOnLists : (M : DoubleMonad {A}) → IsMonoid.isMonoid (Emonoid M) actsOnᴸ (List A)
 EactsOnLists M = record 
   { act = λ x y → s∞ M y x
   ; unit = rallo
-  ; assoc = {! !} 
+  ; assoc = sbollo 
   } where module M = DoubleMonad M
           module MM = Mealy (DoubleMonad.M M)
 
