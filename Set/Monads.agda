@@ -145,7 +145,7 @@ _⊙⁺_ {M = M} (x ∷ xs) e = M.s (x , xs ⊗⁺ e) ∷ (xs ⊙⁺ e)
 
 s∞-acta : {M : DoubleMonad {A}} {as : List A} {x y : Mealy.E (DoubleMonad.M M)} →  (as ⊙⁺ y) ⊙⁺ x ≡ as ⊙⁺ (Cell.α (DoubleMonad.μ M) (x , y))
 s∞-acta {M = M} {as = []} {x} {y} = refl
-s∞-acta {M = M} {as = a ∷ as} {x} {y} = cong₂ _∷_ (cong MM.s (cong₂ _,_ {! !} {! !})) s∞-acta
+s∞-acta {M = M} {as = a ∷ as} {x} {y} = {! !} -- cong₂ _∷_ (cong MM.s (cong₂ _,_ {! !} {! !})) s∞-acta
   where module MM = Mealy (DoubleMonad.M M)
         module M = DoubleMonad M
 
@@ -202,13 +202,18 @@ _◦_ : {M : DoubleMonad {A}} → Mealy.E (DoubleMonad.M M) → Mealy.E (DoubleM
 _◦_ {M = M} e e' = Cell.α M.μ (e , e')
   where module M = DoubleMonad M
 
+miliorfo-lemma : ∀ {M : DoubleMonad {A}} {as : List A} → (e : Mealy.E (DoubleMonad.M M)) → e ◦ (as ⊗⁺ e₀) ≡ e 
+miliorfo-lemma {M = M} {[]} e = Cell≡.eq M.unitᴿ
+  where module M = DoubleMonad M
+miliorfo-lemma {M = M} {a ∷ as} e = {! !}
+
 bicrossedMonoid : (M : DoubleMonad {A}) → Monoid (Mealy.E (DoubleMonad.M M) × List A) 
 bicrossedMonoid M = record
   { _∙_ = λ { (x , as) (x' , bs) → x ◦ (as ⊗⁺ x') , (as ⊙⁺ x') ++ bs } 
-  ; u = Cell.α M.η tt , [] 
-  ; unitᴿ = λ { {x , as} → {! !} }
-  ; unitᴸ = λ { {x , as} → {! !} }
-  ; assoc = λ { {x , as} {y , bs} {z , cs} → {! !} }
+  ; u = e₀ {M = M} , [] 
+  ; unitᴿ = λ { {e , as} → cong₂ _,_ {! !} (trans (unitR _) rallo) }
+  ; unitᴸ = λ { {e , as} → cong₂ _,_ (miliorfo-lemma {M = M} e) refl }
+  ; assoc = λ { {x , as} {y , bs} {z , cs} → cong₂ _,_ {! !} {! !} }
   } where module M = DoubleMonad M
           module MM = Mealy (DoubleMonad.M M)
 
