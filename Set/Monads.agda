@@ -2,8 +2,8 @@
 module Set.Monads where
 
 open import Set.Automata
-open import Set.LimitAutomata
-open import Set.Functors
+--open import Set.LimitAutomata
+--open import Set.Functors
 open import Set.DoubleCategory
 open import Set.CrossedModules
 open import Level
@@ -33,11 +33,11 @@ record DoubleMonad {A : Set} : Set (suc zero) where
     μ-assoc : Cell≡ ((idCell M ⊙ₕ μ) ⊙ᵥ μ) (assoc⁻¹ ⊙ᵥ ((μ ⊙ₕ idCell M) ⊙ᵥ μ))
 
 -- fleshout di una monade
-esempio : {A : Set} 
+fleshoutMonad : {A : Set} 
   (M : Mealy A A) 
   (e₀ : ⊤ → Mealy.E M) 
   (m : Mealy.E M × Mealy.E M → Mealy.E M) → DoubleMonad {A}
-esempio M e₀ m = record 
+fleshoutMonad M e₀ m = record 
   { M = M -- M : A × E --⟨d,s⟩-→ E × A; 
     -- d : A × E → E | action of List A on E
     -- s : A × E → A | action of E on A 
@@ -102,16 +102,17 @@ fleshoutAlgebra a M α = record
 --thing a M ((as , e) , s) = Cell.α θ (s , {! MonadInMealy.d∞ as e !})
   --where open module a = Algebra M
 
--- helperini
-
-
 dExt : {M : Mealy A B} → (List A) × Mealy.E M → Mealy.E M 
 dExt ([] , e) = e
 dExt {M = M} (x ∷ xs , e) = M.d (x , dExt (xs , e))
   where module M = Mealy M
 
-_⊗_ : {M : DoubleMonad {A}} → List A → Mealy.E (DoubleMonad.M M) → Mealy.E (DoubleMonad.M M)
-as ⊗ e = {! dExt (as , e) !}
+_⊗_ : {M : DoubleMonad {A}} → A → Mealy.E (DoubleMonad.M M) → Mealy.E (DoubleMonad.M M)
+_⊗_ {M = M} a e = M.d (a , e) 
+  where module M = Mealy (DoubleMonad.M M)
+
+_⊗⁺_ : {M : DoubleMonad {A}} → List A → Mealy.E (DoubleMonad.M M) → Mealy.E (DoubleMonad.M M)
+as ⊗⁺ e = dExt (as , e)
 
 dExt-fixpoint : {M : DoubleMonad {A}} {as : List A} → dExt (as , Cell.α (DoubleMonad.η M) tt) ≡ Cell.α (DoubleMonad.η M) tt 
 dExt-fixpoint {as = []} = refl
@@ -133,6 +134,11 @@ dExt-assoc {X = X} {a = e} {x = a ∷ as} {y = b ∷ bs} = cong (λ t → X.d (a
 sExt : {M : Mealy A B} → (List⁺ A) × Mealy.E M → B 
 sExt {M = M} (x ∷ xs , e) = M.s (x , dExt (xs , e))
   where module M = Mealy M
+
+_⊙_ : {M : DoubleMonad {A}} → (List A) → Mealy.E (DoubleMonad.M M) → List A
+_⊙_ {M = M} [] e = []
+_⊙_ {M = M} (x ∷ xs) e = M.s (x , xs ⊗⁺ e) ∷ (xs ⊙ e)
+  where module M = Mealy (DoubleMonad.M M)
 
 s∞ : {M : DoubleMonad {A}} → (List A) → Mealy.E (DoubleMonad.M M) → List A
 s∞ [] e = []
