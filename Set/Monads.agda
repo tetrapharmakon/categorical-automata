@@ -135,9 +135,9 @@ sExt : {M : Mealy A B} → (List⁺ A) × Mealy.E M → B
 sExt {M = M} (x ∷ xs , e) = M.s (x , dExt (xs , e))
   where module M = Mealy M
 
-_⊙_ : {M : DoubleMonad {A}} → (List A) → Mealy.E (DoubleMonad.M M) → List A
-_⊙_ {M = M} [] e = []
-_⊙_ {M = M} (x ∷ xs) e = M.s (x , xs ⊗⁺ e) ∷ (xs ⊙ e)
+_⊙⁺_ : {M : DoubleMonad {A}} → (List A) → Mealy.E (DoubleMonad.M M) → List A
+_⊙⁺_ {M = M} [] e = []
+_⊙⁺_ {M = M} (x ∷ xs) e = M.s (x , xs ⊗⁺ e) ∷ (xs ⊙⁺ e)
   where module M = Mealy (DoubleMonad.M M)
 
 s∞ : {M : DoubleMonad {A}} → (List A) → Mealy.E (DoubleMonad.M M) → List A
@@ -201,9 +201,14 @@ EactsOnLists M = record
   } where module M = DoubleMonad M
           module MM = Mealy (DoubleMonad.M M)
 
+_◦_ : {M : DoubleMonad {A}} → Mealy.E (DoubleMonad.M M) → Mealy.E (DoubleMonad.M M) → Mealy.E (DoubleMonad.M M) 
+_◦_ {M = M} e e' = Cell.α M.μ (e , e')
+  where module M = DoubleMonad M
+
 bicrossedMonoid : (M : DoubleMonad {A}) → Monoid (Mealy.E (DoubleMonad.M M) × List A) 
 bicrossedMonoid M = record
-  { _∙_ = λ { (x , as) (x' , bs) → {! !} } -- (M._∙_ x (as ⊗⋆ x')) , (as ⊙⋆ x') ++ bs }
+  { _∙_ = λ { (x , as) (x' , bs) → x ◦ (as ⊗⁺ x') , (as ⊙⁺ x') ++ bs } 
+  -- (M._∙_ x (as ⊗⋆ x')) , (as ⊙⋆ x') ++ bs }
   ; u = Cell.α M.η tt , [] 
   ; unitᴿ = λ { {x , as} → {! !} }
   ; unitᴸ = λ { {x , as} → {! !} }
