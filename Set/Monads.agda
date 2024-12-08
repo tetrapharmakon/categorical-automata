@@ -161,26 +161,40 @@ module _ (DM : DoubleMonad A) where
 
   s∞-actR : {as : List A} {x y : E} → (as ⊙⁺ x) ⊙⁺ y ≡ as ⊙⁺ (x ◦ y)
   s∞-actR {as = []} {x} {y} = refl
-  s∞-actR {as = a ∷ as} {x} {y} = cong₂ _∷_  {!   !} s∞-actR
+  s∞-actR {as = a ∷ as} {x} {y} = cong₂ _∷_  (cong s (cong₂ _,_ {!   !} {!   !})) s∞-actR
 
-  rallo : ∀ {as} → as ⊙⁺ e₀ ≡ as
-  rallo {[]} = refl
-  rallo {x ∷ as} =
-    begin _ ≡⟨ cong (s (x , (as ⊗⁺ η.α tt)) ∷_) rallo ⟩
+  sUnitAxiom : ∀ {as} → as ⊙⁺ e₀ ≡ as
+  sUnitAxiom {[]} = refl
+  sUnitAxiom {x ∷ as} =
+    begin _ ≡⟨ cong (s (x , (as ⊗⁺ η.α tt)) ∷_) sUnitAxiom ⟩
           _ ≡⟨ cong (λ t → s (x , t) ∷ as) (d⁺-fixpoint {as = as}) ⟩
           _ ≡⟨ cong (λ t → t ∷ as) η.com-s ⟩
           _ ∎
 
-  sbollo : ∀ {as x y} → (as ⊙⁺ x) ⊙⁺ y ≡ as ⊙⁺ (x ◦ y)
-  sbollo {as = []} {x} {y} = refl
-  sbollo {as = a ∷ as} {x} {y} = cong₂ _∷_ {!   !} s∞-actR
+  sActsRList : ∀ {as x y} → (as ⊙⁺ x) ⊙⁺ y ≡ as ⊙⁺ (x ◦ y)
+  sActsRList {as = []} {x} {y} = refl
+  sActsRList {as = a ∷ as} {x} {y} = cong₂ _∷_ {!   !} s∞-actR
 
   EactsOnLists : Emonoid actsOnᴿ (List A)
   EactsOnLists = record
     { act = _⊙⁺_
-    ; unit = rallo
-    ; assoc = sbollo
+    ; unit = sUnitAxiom
+    ; assoc = sActsRList
     }
+
+  -- le hai mostrato il
+  lemmaruolo : {M : DoubleMonad A} (as : List A) (e e' : E) →
+    as ⊗⁺ (e ◦ e') ≡ (as ⊗⁺ e) ◦ ((as ⊙⁺ e) ⊗⁺ e')
+  lemmaruolo [] e e' =
+    begin {!  !} ≡⟨ sym (cong (e ◦_) {!   !}) ⟩
+          {!  !} ≡⟨ sym (cong₂ _◦_ refl (cong (λ t → t ⊗⁺ e) refl)) ⟩
+          {!  !} ∎
+  -- no ma ho buone possibilità
+  lemmaruolo (a ∷ as) e e' =
+    begin {!  !} ≡⟨ {!  !} ⟩
+          {!  !} ≡⟨ {!  !} ⟩
+          {!  !} ≡⟨ {!  !} ⟩
+          {!  !} ∎
 
   miliorfo-lemma : ∀ {as} → (e : E) → e ◦ (as ⊗⁺ e₀) ≡ e
   miliorfo-lemma {[]} e = Cell≡.eq unitᴿ
@@ -193,7 +207,7 @@ module _ (DM : DoubleMonad A) where
   bicrossedMonoid = record
     { _∙_ = λ { (x , as) (x' , bs) → x ◦ (as ⊗⁺ x') , (as ⊙⁺ x') ++ bs }
     ; u = e₀ , []
-    ; unitᴿ = λ { {e , as} → cong₂ _,_ (miliorfo-lemma {as = as} e) (trans (++-identityʳ _) (rallo {as = _})) }
+    ; unitᴿ = λ { {e , as} → cong₂ _,_ (miliorfo-lemma {as = as} e) (trans (++-identityʳ _) (sUnitAxiom {as = _})) }
     ; unitᴸ = λ { {e , as} → cong₂ _,_ {!  !} refl }
     ; assoc = λ { {x , as} {y , bs} {z , cs} → cong₂ _,_ {!  !} {!  !} }
     }
