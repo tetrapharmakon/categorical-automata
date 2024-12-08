@@ -133,9 +133,9 @@ dExt-assoc {X = X} {a = e} {x = a ∷ as} {y = []} = cong (λ t → X.d (a , dEx
 dExt-assoc {X = X} {a = e} {x = a ∷ as} {y = b ∷ bs} = cong (λ t → X.d (a , t)) dExt-assoc
   where module X = Mealy X
 
-sExt : {M : Mealy A B} → (List⁺ A) × Mealy.E M → B 
-sExt {M = M} (x ∷ xs , e) = M.s (x , dExt (xs , e))
-  where module M = Mealy M
+--sExt : {M : Mealy A B} → (List⁺ A) × Mealy.E M → B 
+--sExt {M = M} (x ∷ xs , e) = M.s (x , dExt (xs , e))
+  --where module M = Mealy M
 
 _⊙⁺_ : {M : DoubleMonad {A}} → (List A) → Mealy.E (DoubleMonad.M M) → List A
 _⊙⁺_ {M = M} [] e = []
@@ -146,14 +146,38 @@ _◦_ : {M : DoubleMonad {A}} → Mealy.E (DoubleMonad.M M) → Mealy.E (DoubleM
 _◦_ {M = M} e e' = Cell.α M.μ (e , e')
   where module M = DoubleMonad M
 
+-- le hai mostrato il
+lemmaruolo : {M : DoubleMonad {A}} (as : List A) (e e' : Mealy.E (DoubleMonad.M M)) → 
+  as ⊗⁺ (e ◦ e') ≡ (as ⊗⁺ e) ◦ ((as ⊙⁺ e) ⊗⁺ e')
+lemmaruolo [] e e' =
+  begin {! !} ≡⟨ sym (cong (e ◦_) refl) ⟩ 
+        {! !} ≡⟨ sym (cong₂ _◦_ refl (cong (λ t → t ⊗⁺ e) refl)) ⟩ 
+        {! !} ∎ 
+-- no ma ho buone possibilità
+lemmaruolo (a ∷ as) e e' =
+  begin {! !} ≡⟨ {! !} ⟩ 
+        {! !} ≡⟨ {! !} ⟩ 
+        {! !} ≡⟨ {! !} ⟩ 
+        {! !} ∎
+
 s∞-actR : {M : DoubleMonad {A}} {as : List A} {x y : Mealy.E (DoubleMonad.M M)} → (as ⊙⁺ y) ⊙⁺ x ≡ as ⊙⁺ (x ◦ y)
 s∞-actR {A = A} {M = M} {as = []} {x} {y} = refl
-s∞-actR {A = A} {M = M} {as = a ∷ as} {x} {y} = {! !} -- cong₂ _∷_ {! !} s∞-actR --  (cong MM.s (cong₂ _,_ {! !} {! !})) s∞-actR
+s∞-actR {A = A} {M = M} {as = a ∷ as} {x} {y} = {! !}
+  --begin {! !} ≡⟨ {! !} ⟩ 
+        --{! !} ≡⟨ {! !} ⟩ 
+        --{! !} ≡⟨ {! !} ⟩ 
+        --{! !} ∎
+-- s (s (a , as ⊗⁺ y) , (as ⊙⁺ y) ⊗⁺ x) ∷ ((as ⊙⁺ y) ⊙⁺ x)
+--≡
+--s (a , as ⊗⁺ (x ◦ y)) ∷ (as ⊙⁺ (x ◦ y))
   where module MM = Mealy (DoubleMonad.M M)
         module M = DoubleMonad M
         σ = MM.s
 
-assoc-helper : ∀ {as bs cs : List A} → (as ++ bs) ++ cs ≡ as ++ bs ++ cs
+  --(e ◦ e') ≡ e ◦ ([] ⊗⁺ e')
+  --as ⊗⁺ (e ◦ e') ≡ (as ⊗⁺ e) ◦ ((as ⊙⁺ e) ⊗⁺ e')
+assoc-helper : ∀ {as bs cs : List A} → 
+  (as ++ bs) ++ cs ≡ as ++ bs ++ cs
 assoc-helper {as = []} {bs = bs} {cs = cs} = refl
 assoc-helper {as = a ∷ as} {bs = bs} {cs = cs} = cong (a ∷_) (assoc-helper {as = as} {bs} {cs})
 
@@ -166,7 +190,8 @@ ListMonoid {A = A} = record { isMonoid = record
   ; assoc = assoc-helper
   } }
 
-Emonoid : (M : DoubleMonad {A}) → IsMonoid (Mealy.E (DoubleMonad.M M))
+Emonoid : (M : DoubleMonad {A}) → 
+  IsMonoid (Mealy.E (DoubleMonad.M M))
 Emonoid M = record { isMonoid = record 
   { _∙_ = λ { x y → Cell.α M.μ (x , y) } 
   ; u = e₀ {M = M}
@@ -175,34 +200,35 @@ Emonoid M = record { isMonoid = record
   ; assoc = λ { {x} {y} {z} → sym (Cell≡.eq M.μ-assoc) }
   } } where module M = DoubleMonad M
 
-ListActsOnE : (X : Mealy A B) → (IsMonoid.isMonoid (ListMonoid {A})) actsOnᴸ (Mealy.E X)
+ListActsOnE : (X : Mealy A B) → 
+  (IsMonoid.isMonoid (ListMonoid {A})) actsOnᴸ (Mealy.E X)
 ListActsOnE X = record 
   { act = λ { as e → as ⊗⁺ e } 
   ; unit = refl 
   ; assoc = dExt-assoc 
   }
 
-rallo : {M : DoubleMonad {A}} {as : List A} → as ⊙⁺ (e₀ {M = M}) ≡ as
-rallo {A} {M} {[]} = refl
-rallo {A} {M} {x ∷ as} = 
-  begin _ ≡⟨ cong₂ _∷_ refl rallo ⟩
+sUnitAxiom : {M : DoubleMonad {A}} {as : List A} → as ⊙⁺ (e₀ {M = M}) ≡ as
+sUnitAxiom {A} {M} {[]} = refl
+sUnitAxiom {A} {M} {x ∷ as} = 
+  begin _ ≡⟨ cong₂ _∷_ refl sUnitAxiom ⟩
         _ ≡⟨ cong (λ t → MM.s (x , t) ∷ as) (dExt-fixpoint {M = M} {as = _}) ⟩
         _ ≡⟨ cong (λ t → t ∷ as) (Cell.com-s M.η) ⟩
         _ ∎
   where module MM = Mealy (DoubleMonad.M M)
         module M = DoubleMonad M
 
-sbollo : {M : DoubleMonad {A}} {as : List A} {x y : Mealy.E (DoubleMonad.M M)} → (as ⊙⁺ y) ⊙⁺ x ≡ as ⊙⁺ (x ◦ y)
-sbollo {M = M} {as = []} {x} {y} = refl
-sbollo {M = M} {as = a ∷ as} {x} {y} = cong₂ _∷_ {! !} s∞-actR
+sActsRList : {M : DoubleMonad {A}} {as : List A} {x y : Mealy.E (DoubleMonad.M M)} → (as ⊙⁺ y) ⊙⁺ x ≡ as ⊙⁺ (x ◦ y)
+sActsRList {M = M} {as = []} {x} {y} = refl
+sActsRList {M = M} {as = a ∷ as} {x} {y} = cong₂ _∷_ {! !} s∞-actR
   where module MM = Mealy (DoubleMonad.M M)
         module M = DoubleMonad M
 
 EactsOnLists : (M : DoubleMonad {A}) → IsMonoid.isMonoid (Emonoid M) actsOnᴿ (List A)
 EactsOnLists M = record 
   { act = λ x y → x ⊙⁺ y
-  ; unit = rallo
-  ; assoc = sbollo 
+  ; unit = sUnitAxiom
+  ; assoc = sActsRList 
   } where module M = DoubleMonad M
           module MM = Mealy (DoubleMonad.M M)
 
@@ -220,7 +246,7 @@ bicrossedMonoid : (M : DoubleMonad {A}) → Monoid (Mealy.E (DoubleMonad.M M) ×
 bicrossedMonoid M = record
   { _∙_ = λ { (x , as) (x' , bs) → x ◦ (as ⊗⁺ x') , (as ⊙⁺ x') ++ bs } 
   ; u = e₀ {M = M} , [] 
-  ; unitᴿ = λ { {e , as} → cong₂ _,_ (miliorfo-lemma {M = M} {as = _} e) (trans (unitR _) (rallo {M = M} {as = _})) }
+  ; unitᴿ = λ { {e , as} → cong₂ _,_ (miliorfo-lemma {M = M} {as = _} e) (trans (unitR _) (sUnitAxiom {M = M} {as = _})) }
   ; unitᴸ = λ { {e , as} → cong₂ _,_ (miliorfo-lemma {M = M} {as = _} e) refl }
   ; assoc = λ { {x , as} {y , bs} {z , cs} → cong₂ _,_ {! !} {! !} }
   } where module M = DoubleMonad M
