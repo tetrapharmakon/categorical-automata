@@ -173,7 +173,7 @@ module _ (DM : DoubleMonad A) where
 
   sActsRList : ∀ {as x y} → (as ⊙⁺ x) ⊙⁺ y ≡ as ⊙⁺ (x ◦ y)
   sActsRList {as = []} {x} {y} = refl
-  sActsRList {as = a ∷ as} {x} {y} = cong₂ _∷_ {!   !} s∞-actR
+  sActsRList {as = a ∷ as} {x} {y} = cong₂ _∷_ {! μ.com-d  !} s∞-actR
 
   EactsOnLists : Emonoid actsOnᴿ (List A)
   EactsOnLists = record
@@ -183,7 +183,7 @@ module _ (DM : DoubleMonad A) where
     }
 
   -- le hai mostrato il
-  lemmaruolo : {M : DoubleMonad A} (as : List A) (e e' : E) →
+  lemmaruolo : (as : List A) (e e' : E) →
     as ⊗⁺ (e ◦ e') ≡ (as ⊗⁺ e) ◦ ((as ⊙⁺ e) ⊗⁺ e')
   lemmaruolo [] e e' =
     begin {!  !} ≡⟨ sym (cong (e ◦_) {!   !}) ⟩
@@ -191,16 +191,20 @@ module _ (DM : DoubleMonad A) where
           {!  !} ∎
   -- no ma ho buone possibilità
   lemmaruolo (a ∷ as) e e' =
-    begin {!  !} ≡⟨ {!  !} ⟩
-          {!  !} ≡⟨ {!  !} ⟩
-          {!  !} ≡⟨ {!  !} ⟩
+    begin {!  !} ≡⟨ cong (λ t → d (a , t)) (lemmaruolo as e e') ⟩
+          {!  !} ≡⟨ μ.com-d ⟩
+          --{!  !} ≡⟨ {!  !} ⟩
           {!  !} ∎
+
+-- d (a , μ.α (d⁺ (as , e) , d⁺ (as ⊙⁺ e , e'))) 
+-- ≡ 
+-- μ.α (d (a , d⁺ (as , e)) , d (s (a , d⁺ (as , e)) , d⁺ (as ⊙⁺ e , e')))
 
   miliorfo-lemma : ∀ {as} → (e : E) → e ◦ (as ⊗⁺ e₀) ≡ e
   miliorfo-lemma {[]} e = Cell≡.eq unitᴿ
   miliorfo-lemma {a ∷ as} e =
-    begin {!  !} ≡⟨ {! cong (λ t → e ◦ t) (d⁺-fixpoint {as = _})  !} ⟩
-          {!  !} ≡⟨ Cell≡.eq unitᴸ ⟩
+    begin {!  !} ≡⟨ cong (λ t → e ◦ t) (d⁺-fixpoint {as = _}) ⟩
+          {!  !} ≡⟨ Cell≡.eq unitᴿ ⟩
           {!  !} ∎
 
   bicrossedMonoid : IsMonoid (E × List A)
@@ -208,6 +212,6 @@ module _ (DM : DoubleMonad A) where
     { _∙_ = λ { (x , as) (x' , bs) → x ◦ (as ⊗⁺ x') , (as ⊙⁺ x') ++ bs }
     ; u = e₀ , []
     ; unitᴿ = λ { {e , as} → cong₂ _,_ (miliorfo-lemma {as = as} e) (trans (++-identityʳ _) (sUnitAxiom {as = _})) }
-    ; unitᴸ = λ { {e , as} → cong₂ _,_ {!  !} refl }
+    ; unitᴸ = λ { {e , as} → cong₂ _,_ (Cell≡.eq unitᴸ) refl }
     ; assoc = λ { {x , as} {y , bs} {z , cs} → cong₂ _,_ {!  !} {!  !} }
     }
