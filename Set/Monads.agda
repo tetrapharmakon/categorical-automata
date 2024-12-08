@@ -159,9 +159,24 @@ module _ (DM : DoubleMonad A) where
     } where open module a = Mealy a
   -}
 
+  lemmaruolo : (as : List A) (e e' : E) →
+    as ⊗⁺ (e ◦ e') ≡ (as ⊗⁺ e) ◦ ((as ⊙⁺ e) ⊗⁺ e')
+  lemmaruolo [] e e' =
+    begin _ ≡⟨ sym (cong (e ◦_) {!   !}) ⟩
+          _ ≡⟨ sym (cong₂ _◦_ refl (cong (λ t → t ⊗⁺ e) refl)) ⟩
+          _ ∎
+  lemmaruolo (a ∷ as) e e' =
+    begin _ ≡⟨ cong (λ t → d (a , t)) (lemmaruolo as e e') ⟩
+          _ ≡⟨ μ.com-d ⟩
+          _ ∎
+
   s∞-actR : {as : List A} {x y : E} → (as ⊙⁺ x) ⊙⁺ y ≡ as ⊙⁺ (x ◦ y)
   s∞-actR {as = []} {x} {y} = refl
-  s∞-actR {as = a ∷ as} {x} {y} = cong₂ _∷_  (cong s (cong₂ _,_ {!   !} {!   !})) s∞-actR
+  s∞-actR {as = a ∷ as} {x} {y} = cong₂ _∷_  (cong s (cong₂ _,_ {!   !} 
+      (begin {! !} ≡⟨ {! !} ⟩ 
+             {! !} ≡⟨ sym (lemmaruolo as x y)  ⟩ 
+             {! !} ∎)
+    )) s∞-actR
 
   sUnitAxiom : ∀ {as} → as ⊙⁺ e₀ ≡ as
   sUnitAxiom {[]} = refl
@@ -182,30 +197,12 @@ module _ (DM : DoubleMonad A) where
     ; assoc = sActsRList
     }
 
-  -- le hai mostrato il
-  lemmaruolo : (as : List A) (e e' : E) →
-    as ⊗⁺ (e ◦ e') ≡ (as ⊗⁺ e) ◦ ((as ⊙⁺ e) ⊗⁺ e')
-  lemmaruolo [] e e' =
-    begin {!  !} ≡⟨ sym (cong (e ◦_) {!   !}) ⟩
-          {!  !} ≡⟨ sym (cong₂ _◦_ refl (cong (λ t → t ⊗⁺ e) refl)) ⟩
-          {!  !} ∎
-  -- no ma ho buone possibilità
-  lemmaruolo (a ∷ as) e e' =
-    begin {!  !} ≡⟨ cong (λ t → d (a , t)) (lemmaruolo as e e') ⟩
-          {!  !} ≡⟨ μ.com-d ⟩
-          --{!  !} ≡⟨ {!  !} ⟩
-          {!  !} ∎
-
--- d (a , μ.α (d⁺ (as , e) , d⁺ (as ⊙⁺ e , e'))) 
--- ≡ 
--- μ.α (d (a , d⁺ (as , e)) , d (s (a , d⁺ (as , e)) , d⁺ (as ⊙⁺ e , e')))
-
   miliorfo-lemma : ∀ {as} → (e : E) → e ◦ (as ⊗⁺ e₀) ≡ e
   miliorfo-lemma {[]} e = Cell≡.eq unitᴿ
   miliorfo-lemma {a ∷ as} e =
-    begin {!  !} ≡⟨ cong (λ t → e ◦ t) (d⁺-fixpoint {as = _}) ⟩
-          {!  !} ≡⟨ Cell≡.eq unitᴿ ⟩
-          {!  !} ∎
+    begin _ ≡⟨ cong (λ t → e ◦ t) (d⁺-fixpoint {as = _}) ⟩
+          _ ≡⟨ Cell≡.eq unitᴿ ⟩
+          _ ∎
 
   bicrossedMonoid : IsMonoid (E × List A)
   bicrossedMonoid = record
