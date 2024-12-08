@@ -1,4 +1,4 @@
-{-# OPTIONS --allow-unsolved-metas #-} 
+{-# OPTIONS --allow-unsolved-metas #-}
 module Set.CrossedModules where
 
 open import Level
@@ -14,7 +14,7 @@ private
   variable
     A B C X Y Z M₀ : Set
 
-record Monoid (Carrier : Set) : Set (suc zero) where
+record IsMonoid (Carrier : Set) : Set (suc zero) where
   field
     _∙_ : Carrier → Carrier → Carrier
     u : Carrier
@@ -23,76 +23,75 @@ record Monoid (Carrier : Set) : Set (suc zero) where
     unitᴸ : ∀ {x : Carrier} → u ∙ x ≡ x
     assoc : ∀ {x y z : Carrier} → (x ∙ y) ∙ z ≡ x ∙ (y ∙ z)
 
-record IsMonoid A : Set (suc zero) where
+record Monoid : Set (suc zero) where
   field
-    isMonoid : Monoid A
+    Carrier : Set
+    isMonoid : IsMonoid Carrier
 
-open IsMonoid
-
-record _actsOnᴸ_ (M : Monoid M₀) (A : Set) : Set (suc zero) where
-  open module M = Monoid M
+record _actsOnᴸ_ (M : IsMonoid M₀) (A : Set) : Set (suc zero) where
+  open module M = IsMonoid M
   field
-    act : M₀ → A → A 
+    act : M₀ → A → A
     unit : ∀ {a} → act u a ≡ a
     assoc : ∀ {a x y} → act x (act y a) ≡ act (x ∙ y) a
 
-record _actsOnᴿ_ (M : Monoid M₀) (A : Set) : Set (suc zero) where 
-  open module M = Monoid M
+record _actsOnᴿ_ (M : IsMonoid M₀) (A : Set) : Set (suc zero) where
+  open module M = IsMonoid M
   field
-    act : A → M₀ → A 
+    act : A → M₀ → A
     unit : ∀ {a} → act a u ≡ a
     assoc : ∀ {a x y} → act (act a x) y ≡ act a (x ∙ y)
 
---record LeftModule {M : Monoid} : Set (suc zero) where
-  --open module M = Monoid M
+--record LeftModule {M : IsMonoid} : Set (suc zero) where
+  --open module M = IsMonoid M
   --field
-    --S : Set 
+    --S : Set
     --_⋆_ : M.Carrier → S → S
     --act₁ : ∀ {s : S} → M.e ⋆ s ≡ s
-    --act∙ : ∀ {x y : M.Carrier} {s : S} → (M._∙_ x y) ⋆ s ≡ x ⋆ (y ⋆ s)
-
+    --act∙ : ∀ {x y : M.Carrier} {s : S} → (_∙_ x y) ⋆ s ≡ x ⋆ (y ⋆ s)
 
 record MonadInMealy : Set (suc zero) where
   field
     E : Set
-    _⊗_ : A → E → E 
-    _⊙_ : A → E → A 
+    _⊗_ : A → E → E
+    _⊙_ : A → E → A
     monE : IsMonoid E
-  _∙_ = Monoid._∙_ (isMonoid monE)
+
+  open IsMonoid monE
+
   field
     mistero : ∀ {a e e'} → a ⊗ (e ∙ e') ≡ ((a ⊗ e) ∙ ((a ⊙ e) ⊗ e'))
 
-  e0 = Monoid.u (isMonoid monE)
   field
-    fix : ∀ {a} → a ⊗ e0 ≡ e0 
+    fix : ∀ {a} → a ⊗ u ≡ u
 
-  d∞ : List A → E → E 
+  d∞ : List A → E → E
   d∞ [] e = e
   d∞ (x ∷ xs) e = x ⊗ (d∞ xs e)
 
-  s∞ : List A → E → List A 
+  s∞ : List A → E → List A
   s∞ [] e = []
   s∞ (a ∷ as) e = (a ⊙ (d∞ as e)) ∷ (s∞ as e)
 
-  lemmuzzo : ∀ {as} → d∞ as e0 ≡ e0
+  lemmuzzo : ∀ {as} → d∞ as u ≡ u
   lemmuzzo {[]} = refl
   lemmuzzo {x ∷ as} = trans (cong (λ t → x ⊗ t) lemmuzzo) fix
 
-  _⊗⋆_ : List A → E → E 
+  _⊗⋆_ : List A → E → E
   as ⊗⋆ e = d∞ as e
 
-  _⊙⋆_ : List A → E → List A 
+  _⊙⋆_ : List A → E → List A
   as ⊙⋆ e = s∞ as e
 
-  _∙⋆_ : E → E → E 
+  _∙⋆_ : E → E → E
   e ∙⋆ e' = e ∙ e'
 
   A1 : ∀ {k h h'} → k ⊗⋆ (h ∙ h') ≡ ((k ⊗⋆ h) ∙ ((k ⊙⋆ h) ⊗⋆ h'))
   A1 {[]} {h} {h'} = refl
-  A1 {x ∷ xs} {h} {h'} = 
-    begin x ⊗ d∞ xs (h ∙ h') 
+  A1 {x ∷ xs} {h} {h'} =
+    begin x ⊗ d∞ xs (h ∙ h')
             ≡⟨ cong (λ t → x ⊗ t) (A1 {xs} {h} {h'}) ⟩
-          x ⊗ (d∞ xs h ∙ d∞ (s∞ xs h) h') 
+          x ⊗ (d∞ xs h ∙ d∞ (s∞ xs h) h')
             ≡⟨ mistero ⟩
           ((x ∷ xs) ⊗⋆ h) ∙ (((x ∷ xs) ⊙⋆ h) ⊗⋆ h')
             ∎
@@ -101,40 +100,41 @@ record MonadInMealy : Set (suc zero) where
   A2 {[]} {[]} {h} = refl
   A2 {[]} {x ∷ k'} {h} = refl
   A2 {x ∷ k} {[]} {h} =
-    begin (x ⊙ d∞ (k ++ []) h) ∷ s∞ (k ++ []) h 
+    begin (x ⊙ d∞ (k ++ []) h) ∷ s∞ (k ++ []) h
             ≡⟨ cong (λ t → (x ⊙ d∞ t h) ∷ s∞ t h) (++-identityʳ k) ⟩
-          (x ⊙ d∞ k ([] ⊗⋆ h)) ∷ s∞ k ([] ⊗⋆ h) 
+          (x ⊙ d∞ k ([] ⊗⋆ h)) ∷ s∞ k ([] ⊗⋆ h)
             ≡⟨ sym (++-identityʳ _) ⟩
           (x ⊙ d∞ k ([] ⊗⋆ h)) ∷ s∞ k ([] ⊗⋆ h) ++ ([] ⊙⋆ h)
             ∎
   A2 {x ∷ xs} {y ∷ ys} {h} =
-    begin (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ s∞ (xs ++ y ∷ ys) h 
+    begin (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ s∞ (xs ++ y ∷ ys) h
             ≡⟨ cong (λ t → (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ t) (A2 {xs} {y ∷ ys} {h}) ⟩
-          (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ s∞ xs (y ⊗ d∞ ys h) ++ (y ⊙ d∞ ys h) ∷ s∞ ys h 
+          (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ s∞ xs (y ⊗ d∞ ys h) ++ (y ⊙ d∞ ys h) ∷ s∞ ys h
             ≡⟨ cong (λ t → t ∷ (s∞ xs (y ⊗ d∞ ys h) ++ (y ⊙ d∞ ys h) ∷ s∞ ys h)) (cong (λ r → x ⊙ r) {! !}) ⟩
           (x ⊙ d∞ xs ((y ∷ ys) ⊗⋆ h)) ∷ s∞ xs ((y ∷ ys) ⊗⋆ h) ++ ((y ∷ ys) ⊙⋆ h)
             ∎
-  BiCrossed : Monoid (E × List A)
-  BiCrossed = record 
-    { _∙_ = λ { (x , as) (x' , bs) → (M._∙_ x (as ⊗⋆ x')) , (as ⊙⋆ x') ++ bs }
-    ; u = e0 , [] 
-    ; unitᴿ = λ { {x , as} → 
-        begin 
-          (x M.∙ (as ⊗⋆ e0)) , (as ⊙⋆ e0) ++ [] 
-            ≡⟨ cong (λ t → (M._∙_ x (d∞ as u)) , t) (++-identityʳ _) ⟩
-          (x M.∙ d∞ _ e0) , s∞ as e0
-            ≡⟨ cong₂ _,_ (trans (cong (λ t → x M.∙ t) lemmuzzo) unitᴿ) {! !} ⟩
-          x , as 
+
+  BiCrossed : IsMonoid (E × List A)
+  BiCrossed = record
+    { _∙_ = λ { (x , as) (x' , bs) → (_∙_ x (as ⊗⋆ x')) , (as ⊙⋆ x') ++ bs }
+    ; u = u , []
+    ; unitᴿ = λ { {x , as} →
+        begin
+          (x ∙ (as ⊗⋆ u)) , (as ⊙⋆ u) ++ []
+            ≡⟨ cong (λ t → (_∙_ x (d∞ as u)) , t) (++-identityʳ _) ⟩
+          (x ∙ d∞ _ u) , s∞ as u
+            ≡⟨ cong₂ _,_ (trans (cong (λ t → x ∙ t) lemmuzzo) unitᴿ) {! !} ⟩
+          x , as
             ∎ }
     ; unitᴸ = λ { {x , as} → cong (λ t → t , as) unitᴸ }
     ; assoc = λ { {x , as} {y , bs} {z , cs} → {! !} }
-    } where open module M = Monoid (isMonoid monE)
+    }
 
   theorem : {U : Mealy X A} → BiCrossed actsOnᴸ (Mealy.E U)
-  theorem {U = U} = record 
-    { act = λ { (m , as) x → {!  (as ⊗⋆ m) !} } -- e ∙ d(as , x) ? 
-    ; unit = {! !} 
-    ; assoc = {! !} 
+  theorem {U = U} = record
+    { act = λ { (m , as) x → {!  (as ⊗⋆ m) !} } -- e ∙ d(as , x) ?
+    ; unit = {! !}
+    ; assoc = {! !}
     } where module U = Mealy U
 
 open MonadInMealy

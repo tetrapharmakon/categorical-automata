@@ -1,5 +1,3 @@
 name: categorical-automata
-depend: standard-library-2.0
-include:
-  .
-  /home/andrea/agda-categories/src/
+depend: standard-library-2.1.1
+include: .

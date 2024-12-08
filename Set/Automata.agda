@@ -2,7 +2,10 @@ module Set.Automata where
 
 open import Data.Product using (map₂; _,_; _×_)
 open import Data.Unit using (⊤)
-open import Relation.Binary.PropositionalEquality using (_≡_)
+open import Data.List using (List; _∷_; []; _++_)
+open import Data.List.NonEmpty using (List⁺) renaming (_∷_ to _∷⁺_)
+open import Data.List.Properties using (++-identityʳ)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 private
   variable
@@ -15,6 +18,13 @@ record Mealy (I : Set) (O : Set) : Set₁ where
     E : Set
     d : I × E → E
     s : I × E → O
+
+  d⁺ : List I × E → E
+  d⁺ ([] , e) = e
+  d⁺ (i ∷ is , e) = d (i , d⁺ (is , e))
+
+  s⁺ : List⁺ I × E → O
+  s⁺ (x ∷⁺ xs , e) = s (x , d⁺ (xs , e))
 
 -- Mealy machine in Set
 record Moore (I : Set) (O : Set) : Set₁ where

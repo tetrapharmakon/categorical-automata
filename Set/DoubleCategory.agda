@@ -1,4 +1,4 @@
-{-# OPTIONS --allow-unsolved-metas #-} 
+{-# OPTIONS --allow-unsolved-metas #-}
 module Set.DoubleCategory where
 
 open import Set.Automata
@@ -58,26 +58,26 @@ _⊙ᵥ_ {rv = rv} {lh = lh} α β =
         ; com-d = trans β.com-d (cong β.α α.com-d)
         }
 
-_⊙ₕ_ : ∀ {lv : A → X} {rv : C → Z} {M' : Mealy A B} {M : Mealy B C} {N' : Mealy X Y} {N : Mealy Y Z} {rh : Mealy A' B'} {boh : B → Y}
-  → Cell lv boh M' N' 
+_⊙ₕ_ : ∀ {lv : A → X} {rv : C → Z} {M' : Mealy A B} {M : Mealy B C} {N' : Mealy X Y} {N : Mealy Y Z} {boh : B → Y}
+  → Cell lv boh M' N'
   → Cell boh rv M N
   → Cell lv rv (M ⋄ M') (N ⋄ N')
-_⊙ₕ_ {M' = M'} {M = M} {N' = N'} {N = N} μ ν = 
-  let module μ = Cell μ 
-      module ν = Cell ν 
-      module M = Mealy M 
-      module N = Mealy N 
+_⊙ₕ_ {M' = M'} {M = M} {N' = N'} {N = N} μ ν =
+  let module μ = Cell μ
+      module ν = Cell ν
+      module M = Mealy M
+      module N = Mealy N
       module M' = Mealy M'
       module N' = Mealy N' in
-  record 
+  record
     { α = map μ.α ν.α
-    ; com-s = λ { {y = (z , w)} → 
-        trans (cong (λ t → N.s (t , ν.α w)) μ.com-s) ν.com-s 
+    ; com-s = λ { {y = (z , w)} →
+        trans (cong (λ t → N.s (t , ν.α w)) μ.com-s) ν.com-s
       }
-    ; com-d = λ { {y = (z , w)} → 
-        cong₂ _,_ μ.com-d (trans (cong (λ t → N.d (t , ν.α w)) μ.com-s) ν.com-d) 
+    ; com-d = λ { {y = (z , w)} →
+        cong₂ _,_ μ.com-d (trans (cong (λ t → N.d (t , ν.α w)) μ.com-s) ν.com-d)
       }
-    } 
+    }
 
 record Cell≡ {lh : Mealy A B} {rh : Mealy A' B'} (C C' : Cell lv rv lh rh) : Set (suc zero) where
   private
@@ -94,10 +94,10 @@ idH h = record
   }
 
 idCell : ∀ (M : Mealy X Y) → Cell id id M M
-idCell M = record 
-  { α = id 
-  ; com-s = refl 
-  ; com-d = refl 
+idCell M = record
+  { α = id
+  ; com-s = refl
+  ; com-d = refl
   }
 
 {-
@@ -220,47 +220,47 @@ fatto2 {X = X} {Y = Y} M SOI =
       }
 
 unitorᴸ : ∀ (M : Mealy X Y) → Cell id id M (M ⋄ idMealy)
-unitorᴸ M = record 
-  { α = λ { x → tt , x } 
-  ; com-s = {! !} 
-  ; com-d = {! !} 
+unitorᴸ M = record
+  { α = λ { x → tt , x }
+  ; com-s = {! !}
+  ; com-d = {! !}
   }
 
 unitorᴿ : ∀ (M : Mealy X Y) → Cell id id (idMealy ⋄ M) M
-unitorᴿ M = record 
-  { α = λ { (e , _) → e } 
-  ; com-s = {! !} 
-  ; com-d = {! !} 
+unitorᴿ M = record
+  { α = λ { (e , _) → e }
+  ; com-s = {! !}
+  ; com-d = {! !}
   }
 
 unitorᴸ⁻¹ : ∀ (M : Mealy X Y) → Cell id id (M ⋄ idMealy) M
-unitorᴸ⁻¹ M = record 
-  { α = λ { (_ , e) → e } 
-  ; com-s = {! !} 
-  ; com-d = {! !} 
+unitorᴸ⁻¹ M = record
+  { α = λ { (_ , e) → e }
+  ; com-s = {! !}
+  ; com-d = {!  !}
   }
 
 unitorᴿ⁻¹ : ∀ (M : Mealy X Y) → Cell id id M (idMealy ⋄ M)
-unitorᴿ⁻¹ M = record 
-  { α = λ { x → x , tt } 
-  ; com-s = {! !} 
-  ; com-d = {! !} 
+unitorᴿ⁻¹ M = record
+  { α = λ { x → x , tt }
+  ; com-s = {!  !}
+  ; com-d = {!  !}
   }
 
-assoc : ∀ {M : Mealy X Y} {N : Mealy Y Z} {P : Mealy Z A} → Cell id id (P ⋄ (N ⋄ M)) ((P ⋄ N) ⋄ M)
-assoc {M = M} {N = N} {P = P} = record 
-  { α = λ { ((e , f) , p) → e , f , p } 
-  ; com-s = refl 
-  ; com-d = refl 
+assoc : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id (P ⋄ (N ⋄ M)) ((P ⋄ N) ⋄ M)
+assoc P N M = record
+  { α = λ { ((e , f) , p) → e , f , p }
+  ; com-s = refl
+  ; com-d = refl
   } where module M = Mealy M
           module N = Mealy N
           module P = Mealy P
 
-assoc⁻¹ : ∀ {M : Mealy X Y} {N : Mealy Y Z} {P : Mealy Z A} → Cell id id ((P ⋄ N) ⋄ M) (P ⋄ (N ⋄ M)) 
-assoc⁻¹ {M = M} {N = N} {P = P} = record 
-  { α = λ { (e , f , p) → (e , f) , p } 
-  ; com-s = refl 
-  ; com-d = refl 
+assoc⁻¹ : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id ((P ⋄ N) ⋄ M) (P ⋄ (N ⋄ M))
+assoc⁻¹ P N M = record
+  { α = λ { (e , f , p) → (e , f) , p }
+  ; com-s = refl
+  ; com-d = refl
   } where module M = Mealy M
           module N = Mealy N
           module P = Mealy P
@@ -275,7 +275,7 @@ record Companion {A B} (f : A → B) : Set (suc zero) where
   field
     zig : Cell≡ (idH f) (Ξ ⊙ᵥ Λ)
     zag : Cell≡ (unitorᴸ comp ⊙ᵥ ((Ξ ⊙ₕ Λ) ⊙ᵥ unitorᴿ comp)) (idCell comp)
-   
+
 record Conjoint {A B} (f : A → B) : Set (suc zero) where
   field
     conj : Mealy B A -- the loose arrow
@@ -286,58 +286,58 @@ record Conjoint {A B} (f : A → B) : Set (suc zero) where
   field
     zig : Cell≡ (idH f) (Λ ⊙ᵥ Ξ)
     zag : Cell≡ (unitorᴿ⁻¹ conj ⊙ᵥ ((Ξ ⊙ₕ Λ) ⊙ᵥ unitorᴸ⁻¹ conj)) (idCell conj)
-_ₒ : (f : A → B) → Companion f 
-f ₒ = record 
-  { comp = record 
-    { E = ⊤ 
-    ; d = λ { x → tt } 
-    ; s = λ { (a , _) → f a } 
-    } 
-  ; Λ = record 
-    { α = λ { x → tt } 
-    ; com-s = refl 
-    ; com-d = refl 
-    } 
-  ; Ξ = record 
-    { α = λ { x → tt } 
-    ; com-s = refl 
-    ; com-d = refl 
-    } 
-  ; zig = record { eq = refl } 
-  ; zag = record { eq = refl } 
+_ₒ : (f : A → B) → Companion f
+f ₒ = record
+  { comp = record
+    { E = ⊤
+    ; d = λ { x → tt }
+    ; s = λ { (a , _) → f a }
+    }
+  ; Λ = record
+    { α = λ { x → tt }
+    ; com-s = refl
+    ; com-d = refl
+    }
+  ; Ξ = record
+    { α = λ { x → tt }
+    ; com-s = refl
+    ; com-d = refl
+    }
+  ; zig = record { eq = refl }
+  ; zag = record { eq = refl }
   }
 
 -- I think conjoints do not exist
 --
 --
-ConjointExperiment : (f : A → B) → (a : A) → Conjoint f 
-ConjointExperiment {A} {B} f a = record 
-  { conj = record 
-    { E = A × B 
-    ; d = λ { (b , (a , b')) → a , f a } 
-    ; s = λ { (b , (a , b')) → a } 
-    } 
-  ; Λ = record 
-    { α = λ { tt → a , f a } 
-    ; com-s = λ { {x} {tt} → {! !} }
-    ; com-d = refl 
-    } 
-  ; Ξ = record 
-    { α = λ { x → tt } 
-    ; com-s = λ { {b} {(a , b')} → {! !} } -- b ≡ f a
-    ; com-d = refl 
+ConjointExperiment : (f : A → B) → (a : A) → Conjoint f
+ConjointExperiment {A} {B} f a = record
+  { conj = record
+    { E = A × B
+    ; d = λ { (b , (a , b')) → a , f a }
+    ; s = λ { (b , (a , b')) → a }
     }
-  ; zig = record { eq = refl } 
-  ; zag = record { eq = {! !} } 
+  ; Λ = record
+    { α = λ { tt → a , f a }
+    ; com-s = λ { {x} {tt} → {!  !} }
+    ; com-d = refl
+    }
+  ; Ξ = record
+    { α = λ { x → tt }
+    ; com-s = λ { {b} {(a , b')} → {!  !} } -- b ≡ f a
+    ; com-d = refl
+    }
+  ; zig = record { eq = refl }
+  ; zag = record { eq = {!  !} }
   }
 
-ConjointExperiment2 : (f : A → B) → Conjoint f 
-ConjointExperiment2 {A} {B} f = record 
-  { conj = {! mealify (P∞ A) !} 
-  ; Λ = {! !} 
-  ; Ξ = {! !} 
-  ; zig = {! !} 
-  ; zag = {! !} 
+ConjointExperiment2 : (f : A → B) → Conjoint f
+ConjointExperiment2 {A} {B} f = record
+  { conj = {! mealify (P∞ A)  !}
+  ; Λ = {!  !}
+  ; Ξ = {!  !}
+  ; zig = {!  !}
+  ; zag = {!  !}
   }
 -- initials and terminals
 
@@ -365,16 +365,16 @@ record DoubleInitial : Set (suc zero) where
 
 
 
-scimmia : DoubleTerminal 
-scimmia = record 
-  { ⊤⊤ = ⊤ 
+scimmia : DoubleTerminal
+scimmia = record
+  { ⊤⊤ = ⊤
   ; universal₁ = λ { M → (λ { x → tt }) , λ { x → tt } }
-  ; universal₂ = λ { M → record 
-    { α = λ { x → tt } 
-    ; com-s = refl 
-    ; com-d = refl } 
-    } 
-  ; unique = record { eq = refl } 
+  ; universal₂ = λ { M → record
+    { α = λ { x → tt }
+    ; com-s = refl
+    ; com-d = refl }
+    }
+  ; unique = record { eq = refl }
   }
 
 --open import Function.Bundles using (Bijection)
@@ -395,15 +395,13 @@ bijFrom : ∀ {A} {x} → ((from {A}) ∘ (to {A})) x ≡ x
 bijFrom = refl
 
 coscimmia : DoubleInitial
-coscimmia = record 
-  { Ø = ⊥ 
+coscimmia = record
+  { Ø = ⊥
   ; universal₁ = λ { M → (λ { () }) , λ { () } }
-  ; universal₂ = λ { M → record 
-    { α = {! !} 
+  ; universal₂ = λ { M → record
+    { α = {!  !}
     ; com-s = λ { {()} }
-    ; com-d = λ { {()} } 
-    } } 
-  ; unique = record { eq = λ { {tt} → {! !} } }
+    ; com-d = λ { {()} }
+    } }
+  ; unique = record { eq = λ { {tt} → {!  !} } }
   }
-
-
