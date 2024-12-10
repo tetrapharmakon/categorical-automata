@@ -124,6 +124,7 @@ record MonadInMealy : Set (suc zero) where
             ≡⟨ cong (λ t → (_∙_ x (d∞ as u)) , t) (++-identityʳ _) ⟩
           (x ∙ d∞ _ u) , s∞ as u
             ≡⟨ cong₂ _,_ (trans (cong (λ t → x ∙ t) lemmuzzo) unitᴿ) {! !} ⟩
+            -- questo segue da una eq. di Mealy
           x , as
             ∎ }
     ; unitᴸ = λ { {x , as} → cong (λ t → t , as) unitᴸ }
