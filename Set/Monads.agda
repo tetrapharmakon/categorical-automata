@@ -151,8 +151,8 @@ module _ (DM : DoubleMonad A) where
     { a = P
     ; θ = record
       { α = α -- λ { (a , m) → {! !} } -- mappa di azione di E su S = Mealy.E a
-      ; com-s = λ { {x} {t , m} → {! !} } -- s (x , α (a , m)) ≡ M.s (s (x , a) , m) le due azioni sono "bilanciate"
-      ; com-d = λ { {x} {t , m} → {! !} } } -- d (x , α (a , m)) ≡ α (d (x , a) , M.d (s (x , a) , m))
+      ; com-s = λ { {x} {t , e} → {! !} } -- s (x , α (a , e)) ≡ M.s (s (x , a) , e) le due azioni sono "bilanciate"
+      ; com-d = λ { {x} {t , e} → {! !} } } -- d (x , α (a , e)) ≡ α (d (x , a) , M.d (s (x , a) , e))
       -- x ⊗ (a ★ m) ≡ (x ⊗ a) ★ (aˣ ⊗ m)
     ; θ-unit = record { eq = λ { {e , tt} → {! !} } } -- α (e , η.α tt) ≡ e
     ; θ-assoc = record { eq = λ { {(e , m) , m'} → {!  !} } } -- α (α (e , m) , m') ≡ α (e , μ.α (m , m'))
@@ -217,19 +217,21 @@ module _ (DM : DoubleMonad A) where
 --
   module _ (U : Algebra DM) where
     open Algebra U
-    --open Mealy M
 
     module θ = Cell θ
 
-    superchiappe : (as bs : List A) {x : Mealy.E a} {e e' : E} → θ.α (θ.α (x , d⁺ (bs , e')) , d⁺ (as , e)) ≡ θ.α (x , d⁺ (as ⊙⁺ e' ++ bs , μ.α (e , d⁺ (as , e'))))
-    superchiappe [] bs {x = x} {e = e} {e' = e'} = {! Cell≡.eq θ-assoc {x = ((x , e) , e')} !}
-    superchiappe (a ∷ as) bs = {! !}
+    superchiappe : (as bs : List A) {x : Mealy.E a} {e e' : E} → θ.α (θ.α (x , d⁺ (as , e)) , d⁺ (bs , e')) ≡ θ.α (x , d⁺ (as ⊙⁺ e' ++ bs , μ.α (e , d⁺ (as , e'))))
+    superchiappe [] [] {x = x} {e = e} {e' = e'} = Cell≡.eq θ-assoc {x = (x , e) , e'}
+    superchiappe [] (b ∷ []) {x = x} {e = e} {e' = e'} = trans (Cell≡.eq θ-assoc) (cong (λ t → θ.α (x , t)) {! !})
+    superchiappe [] (b ∷ (b' ∷ bs)) {x = x} {e = e} {e' = e'} = trans (Cell≡.eq θ-assoc) (cong (λ t → θ.α (x , t)) {! !})
+    superchiappe (a ∷ as) [] {x = x} {e = e} {e' = e'} = {! !}
+    superchiappe (a ∷ as) (b ∷ bs) = {! !}
 
 
 
-    fattoide : bicrossedMonoid actsOnᴸ (Mealy.E a)
+    fattoide : bicrossedMonoid actsOnᴿ (Mealy.E a)
     fattoide = record 
-      { act = λ { (e , as) x → θ.α (x , d⁺ (as , e)) } 
+      { act = λ { x (e , as) → θ.α (x , d⁺ (as , e)) } 
       ; unit = λ { {a} → Cell≡.eq θ-unit }
       ; assoc = λ { {a} {e , as} {e' , bs} → superchiappe as bs }
       }
