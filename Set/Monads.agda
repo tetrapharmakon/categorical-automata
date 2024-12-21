@@ -147,16 +147,16 @@ module _ (DM : DoubleMonad A) where
     }
 
   fleshoutAlgebra : (a : Mealy X A) → (α : Mealy.E a × E → Mealy.E a) → Algebra DM
-  fleshoutAlgebra a α = record
-    { a = a
+  fleshoutAlgebra P α = record
+    { a = P
     ; θ = record
       { α = α -- λ { (a , m) → {! !} } -- mappa di azione di E su S = Mealy.E a
-      ; com-s = λ { {x} {a , m} → {! !} } -- s (x , α (a , m)) ≡ M.s (s (x , a) , m) le due azioni sono "bilanciate"
-      ; com-d = λ { {x} {a , m} → {! !} } } -- d (x , α (a , m)) ≡ α (d (x , a) , M.d (s (x , a) , m))
+      ; com-s = λ { {x} {t , m} → {! !} } -- s (x , α (a , m)) ≡ M.s (s (x , a) , m) le due azioni sono "bilanciate"
+      ; com-d = λ { {x} {t , m} → {! !} } } -- d (x , α (a , m)) ≡ α (d (x , a) , M.d (s (x , a) , m))
       -- x ⊗ (a ★ m) ≡ (x ⊗ a) ★ (aˣ ⊗ m)
     ; θ-unit = record { eq = λ { {e , tt} → {! !} } } -- α (e , η.α tt) ≡ e
     ; θ-assoc = record { eq = λ { {(e , m) , m'} → {!  !} } } -- α (α (e , m) , m') ≡ α (e , μ.α (m , m'))
-    } where open module a = Mealy a
+    } where module P = Mealy P
 
   d⁺-nact : (as : List A) (e e' : E) →
     as ⊗⁺ (e ◦ e') ≡ (as ⊗⁺ e) ◦ ((as ⊙⁺ e) ⊗⁺ e')
@@ -222,7 +222,7 @@ module _ (DM : DoubleMonad A) where
     module θ = Cell θ
 
     superchiappe : (as bs : List A) {x : Mealy.E a} {e e' : E} → θ.α (θ.α (x , d⁺ (bs , e')) , d⁺ (as , e)) ≡ θ.α (x , d⁺ (as ⊙⁺ e' ++ bs , μ.α (e , d⁺ (as , e'))))
-    superchiappe [] bs = {! Cell≡.eq θ-assoc!}
+    superchiappe [] bs {x = x} {e = e} {e' = e'} = {! Cell≡.eq θ-assoc {x = ((x , e) , e')} !}
     superchiappe (a ∷ as) bs = {! !}
 
 
@@ -231,5 +231,5 @@ module _ (DM : DoubleMonad A) where
     fattoide = record 
       { act = λ { (e , as) x → θ.α (x , d⁺ (as , e)) } 
       ; unit = λ { {a} → Cell≡.eq θ-unit }
-      ; assoc = λ { {a} {e , as} {e' , bs} → {!  !} }
+      ; assoc = λ { {a} {e , as} {e' , bs} → superchiappe as bs }
       }

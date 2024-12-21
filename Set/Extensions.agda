@@ -22,9 +22,12 @@ private
 record _isRan_along_ (Ran : Mealy B C) (G : Mealy A C) (F : Mealy A B) : Set (suc zero) where
   field
     ρ : Cell id id (Ran ⋄ F) G
-    universal : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell id id H Ran
-    commute : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → Cell≡ ξ ((idCell F ⊙ₕ universal H ξ) ⊙ᵥ ρ)
-    unique : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) (c : Cell id id H Ran) (pc : Cell≡ ξ ((idCell F ⊙ₕ c) ⊙ᵥ ρ)) → Cell≡ c (universal H ξ)
+    universal : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → 
+      Cell id id H Ran
+    commute : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) → 
+      Cell≡ ξ ((idCell F ⊙ₕ universal H ξ) ⊙ᵥ ρ)
+    unique : ∀ (H : Mealy B C) (ξ : Cell id id (H ⋄ F) G) (c : Cell id id H Ran) (pc : Cell≡ ξ ((idCell F ⊙ₕ c) ⊙ᵥ ρ)) → 
+      Cell≡ c (universal H ξ)
 
 Ran_⟨_⟩ : (F : Mealy A B) (G : Mealy A C) → (a : A) → (e : Mealy.E F) → Mealy B C 
 Ran_⟨_⟩ F G a e = record 
@@ -34,32 +37,32 @@ Ran_⟨_⟩ F G a e = record
   } where module F = Mealy F 
           module G = Mealy G
 
---module _ {F : Mealy A B} {G : Mealy A C} {R : Mealy B C} where
+module _ {F : Mealy A B} {G : Mealy A C} {R : Mealy B C} where
   
-  --module F = Mealy F 
-  --module G = Mealy G
-  --module R = Mealy R
+  module F = Mealy F 
+  module G = Mealy G
+  module R = Mealy R
 
 
-  --fleshoutRan : (H : Mealy B C) → (ρ : F.E → R.E → G.E)
-    --→ R isRan G along F 
-  --fleshoutRan H ρ = record 
-    --{ ρ = record 
-      --{ α = λ { (f , r) → ρ f r } -- ρ : F.E × R.E → G.E 
-      --; com-s = λ { {a} {f , r} → {! !} } -- Goal: G.s (a , ρ f r) ≡ R.s (F.s (a , f) , r)
-      --; com-d = λ { {a} {f , r} → {! !} } -- Goal: G.d (a , ρ f r) ≡ ρ (F.d (a , f)) (R.d (F.s (a , f) , r))
-      --} 
-    --; universal = λ { H ξ → let module H = Mealy H 
-                                --module ξ = Cell ξ in record 
-      --{ α = {!ν !} -- Goal: ν : H.E → R.E
-      --; com-s = λ { {b} {h} → {! !} } -- Goal: R.s (b , ν h) ≡ H.s (b , h)
-      --; com-d = λ { {b} {h} → {! !} } -- Goal: R.d (b , ν h) ≡ ν (H.d (b , h)) 
-      --} } 
-    --; commute = λ { H ξ → let module ξ = Cell ξ in record { eq = λ { {f , h} → {! !} } } } -- Goal: ξ.α (f , h) ≡ ρ f (ν h)
-    --; unique = λ { H ξ c pc → let module ξ = Cell ξ 
-                                  --module c = Cell c
-      --in record { eq = λ { {h} → {! !} } } } -- Goal: c.α h ≡ ν h
-    -- }
+  fleshoutRan : (H : Mealy B C) → (ρ : F.E → R.E → G.E)
+    → R isRan G along F 
+  fleshoutRan H ρ = record 
+    { ρ = record 
+      { α = λ { (f , r) → ρ f r } -- ρ : F.E × R.E → G.E 
+      ; com-s = λ { {a} {f , r} → {! !} } -- G.s (a , ρ f r) ≡ R.s (F.s (a , f) , r)
+      ; com-d = λ { {a} {f , r} → {! !} } -- G.d (a , ρ f r) ≡ ρ (F.d (a , f)) (R.d (F.s (a , f) , r))
+      } 
+    ; universal = λ { H ξ → let module H = Mealy H 
+                                module ξ = Cell ξ in record 
+      { α = {!ξ.com-s !} -- Goal: ν : H.E → R.E
+      ; com-s = λ { {b} {h} → {! !} } -- Goal: R.s (b , ν h) ≡ H.s (b , h)
+      ; com-d = λ { {b} {h} → {! !} } -- Goal: R.d (b , ν h) ≡ ν (H.d (b , h)) 
+      } } 
+    ; commute = λ { H ξ → let module ξ = Cell ξ in record { eq = λ { {f , h} → {! !} } } } -- Goal: ξ.α (f , h) ≡ ρ f (ν h)
+    ; unique = λ { H ξ c pc → let module ξ = Cell ξ 
+                                  module c = Cell c
+      in record { eq = λ { {h} → {! !} } } } -- Goal: c.α h ≡ ν h
+     }
 
 
   {-
@@ -114,9 +117,9 @@ record _isRift_along_ (R : Mealy A B) (G : Mealy A X) (F : Mealy B X) : Set (suc
       Cell≡ c (universal H ξ)
 
 module _ {R : Mealy A B} {G : Mealy A X} {F : Mealy B X} where
-  module F = Mealy F 
-  module G = Mealy G 
-  module R = Mealy R 
+  --module F = Mealy F 
+  --module G = Mealy G 
+  --module R = Mealy R 
 
   candidateRift : Mealy A B 
   candidateRift = record 

@@ -100,6 +100,51 @@ idCell M = record
   ; com-d = refl
   }
 
+unitorᴸ : ∀ (M : Mealy X Y) → Cell id id M (M ⋄ idMealy)
+unitorᴸ M = record
+  { α = λ { x → tt , x }
+  ; com-s = {! !}
+  ; com-d = {! !}
+  }
+
+unitorᴿ : ∀ (M : Mealy X Y) → Cell id id (idMealy ⋄ M) M
+unitorᴿ M = record
+  { α = λ { (e , _) → e }
+  ; com-s = {! !}
+  ; com-d = {! !}
+  }
+
+unitorᴸ⁻¹ : ∀ (M : Mealy X Y) → Cell id id (M ⋄ idMealy) M
+unitorᴸ⁻¹ M = record
+  { α = λ { (_ , e) → e }
+  ; com-s = {! !}
+  ; com-d = {!  !}
+  }
+
+unitorᴿ⁻¹ : ∀ (M : Mealy X Y) → Cell id id M (idMealy ⋄ M)
+unitorᴿ⁻¹ M = record
+  { α = λ { x → x , tt }
+  ; com-s = {!  !}
+  ; com-d = {!  !}
+  }
+
+assoc : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id (P ⋄ (N ⋄ M)) ((P ⋄ N) ⋄ M)
+assoc P N M = record
+  { α = λ { ((e , f) , p) → e , f , p }
+  ; com-s = refl
+  ; com-d = refl
+  } where module M = Mealy M
+          module N = Mealy N
+          module P = Mealy P
+
+assoc⁻¹ : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id ((P ⋄ N) ⋄ M) (P ⋄ (N ⋄ M))
+assoc⁻¹ P N M = record
+  { α = λ { (e , f , p) → (e , f) , p }
+  ; com-s = refl
+  ; com-d = refl
+  } where module M = Mealy M
+          module N = Mealy N
+          module P = Mealy P
 {-
 
 the tabulator of (X×E → E×Y) is a map τ : 1 → E (so, a point of E) such that
@@ -182,88 +227,42 @@ fatto {X = X} {Y = Y} M = let module M = Mealy M in record
   ; τ = record
     { α = λ { x → tt }
     ; com-s = λ { {x} {e} → {! M.s !} }
-    ; com-d = {! !} -- refl
+    ; com-d = refl -- refl
     }
   ; universal = λ { {f = f} ξ (inj₁ x) → f x
                   ; {g = g} ξ (inj₂ y) → g y }
   ; fst-commute₁ = λ _ → refl
   ; snd-commute₁ = λ _ → refl
-  ; commute₂ = λ { ξ → record { eq = {! Cell.com-d ξ !} } }
+  ; commute₂ = λ { ξ → record { eq = Cell.com-d ξ } }
   }
 
-record SubobjectOfInterest (M : Mealy X Y) : Set (suc zero) where
-  private
-    module M = Mealy M
-  field
-    e : M.E
-    fix-d   : ∀ {x} → M.d (x , e) ≡ e
-    se-surj : ∀ {y} → ∃[ x ] (M.s (x , e) ≡ y)
+-- record SubobjectOfInterest (M : Mealy X Y) : Set (suc zero) where
+--   private
+--     module M = Mealy M
+--   field
+--     e : M.E
+--     fix-d   : ∀ {x} → M.d (x , e) ≡ e
+--     se-surj : ∀ {y} → ∃[ x ] (M.s (x , e) ≡ y)
 
 
-fatto2 : (M : Mealy X Y) → (SOI : SubobjectOfInterest M) → Tabulator M
-fatto2 {X = X} {Y = Y} M SOI =
-  let module M = Mealy M
-      module SOI = SubobjectOfInterest SOI in
-    record
-      { tab = X × Y
-      ; p = proj₁
-      ; q = proj₂
-      ; τ = record
-        { α = λ { _ → SOI.e }
-        ; com-s = λ { {x , y} → {! proj₂ (SOI.se-surj {y}) !} }
-        ; com-d = λ { {x , y} {tt} → SOI.fix-d }
-        }
-      ; universal = λ { {f = f} {g = g} ξ → < f , g > }
-      ; fst-commute₁ = λ { ξ → refl }
-      ; snd-commute₁ = λ { ξ → refl }
-      ; commute₂ = record { eq = λ { {x} → {! !} } } --impossible
-      }
-
-unitorᴸ : ∀ (M : Mealy X Y) → Cell id id M (M ⋄ idMealy)
-unitorᴸ M = record
-  { α = λ { x → tt , x }
-  ; com-s = {! !}
-  ; com-d = {! !}
-  }
-
-unitorᴿ : ∀ (M : Mealy X Y) → Cell id id (idMealy ⋄ M) M
-unitorᴿ M = record
-  { α = λ { (e , _) → e }
-  ; com-s = {! !}
-  ; com-d = {! !}
-  }
-
-unitorᴸ⁻¹ : ∀ (M : Mealy X Y) → Cell id id (M ⋄ idMealy) M
-unitorᴸ⁻¹ M = record
-  { α = λ { (_ , e) → e }
-  ; com-s = {! !}
-  ; com-d = {!  !}
-  }
-
-unitorᴿ⁻¹ : ∀ (M : Mealy X Y) → Cell id id M (idMealy ⋄ M)
-unitorᴿ⁻¹ M = record
-  { α = λ { x → x , tt }
-  ; com-s = {!  !}
-  ; com-d = {!  !}
-  }
-
-assoc : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id (P ⋄ (N ⋄ M)) ((P ⋄ N) ⋄ M)
-assoc P N M = record
-  { α = λ { ((e , f) , p) → e , f , p }
-  ; com-s = refl
-  ; com-d = refl
-  } where module M = Mealy M
-          module N = Mealy N
-          module P = Mealy P
-
-assoc⁻¹ : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id ((P ⋄ N) ⋄ M) (P ⋄ (N ⋄ M))
-assoc⁻¹ P N M = record
-  { α = λ { (e , f , p) → (e , f) , p }
-  ; com-s = refl
-  ; com-d = refl
-  } where module M = Mealy M
-          module N = Mealy N
-          module P = Mealy P
+-- fatto2 : (M : Mealy X Y) → (SOI : SubobjectOfInterest M) → Tabulator M
+-- fatto2 {X = X} {Y = Y} M SOI =
+--   let module M = Mealy M
+--       module SOI = SubobjectOfInterest SOI in
+--     record
+--       { tab = X × Y
+--       ; p = proj₁
+--       ; q = proj₂
+--       ; τ = record
+--         { α = λ { _ → SOI.e }
+--         ; com-s = λ { {x , y} → {! proj₂ (SOI.se-surj {y}) !} }
+--         ; com-d = λ { {x , y} {tt} → SOI.fix-d }
+--         }
+--       ; universal = λ { {f = f} {g = g} ξ → < f , g > }
+--       ; fst-commute₁ = λ { ξ → refl }
+--       ; snd-commute₁ = λ { ξ → refl }
+--       ; commute₂ = record { eq = λ { {x} → {! !} } } --impossible
+--       }
 
 record Companion {A B} (f : A → B) : Set (suc zero) where
   field
@@ -286,6 +285,7 @@ record Conjoint {A B} (f : A → B) : Set (suc zero) where
   field
     zig : Cell≡ (idH f) (Λ ⊙ᵥ Ξ)
     zag : Cell≡ (unitorᴿ⁻¹ conj ⊙ᵥ ((Ξ ⊙ₕ Λ) ⊙ᵥ unitorᴸ⁻¹ conj)) (idCell conj)
+
 _ₒ : (f : A → B) → Companion f
 f ₒ = record
   { comp = record
@@ -356,17 +356,36 @@ record DoubleInitial : Set (suc zero) where
     unique : ∀ {X Y} {M : Mealy X Y} {c : Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) idMealy M} → Cell≡ c (universal₂ M)
 
 
---record DoubleSum (A B : Set) : Set (suc zero) where
-  --field
-    --A⊎B : Set
-    --in₁ : A → A⊎B
-    --in₂ : B → A⊎B
-    --universal₂ : ∀ {X Y A} {M : Mealy X Y} {f : A → X} {f' : A → Y} {ξ : Cell f f' idMealy M} {g : B → X} {g' : B → Y} {θ : Cell g g' idMealy M} → {! !}
+record DoubleSum (A B : Set) : Set (suc zero) where
+  field
+    sum : Set
+    in₁ : A → sum
+    in₂ : B → sum
+    ι₁ : Cell in₁ in₁ idMealy idMealy
+    ι₂ : Cell in₂ in₂ idMealy idMealy
+    universal₁ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} → 
+      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u) → 
+      (sum → X) × (sum → Y)
+    universal₂ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} → 
+      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  → 
+      (Cell (proj₁ (universal₁ ξ₁ ξ₂)) (proj₂ (universal₁ ξ₁ ξ₂)) idMealy u)
+    fst-commute₁ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} → 
+      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  → 
+      (proj₁ (universal₁ ξ₁ ξ₂) ∘ in₁ ≡ a) × (proj₂ (universal₁ ξ₁ ξ₂) ∘ in₁ ≡ a')
+    snd-commute₁ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} → 
+      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  → 
+      (proj₁ (universal₁ ξ₁ ξ₂) ∘ in₂ ≡ b) × (proj₂ (universal₁ ξ₁ ξ₂) ∘ in₂ ≡ b')
+    fst-commute₂ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} → 
+      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  → 
+      (Cell≡ ξ₁ (subst₂ (λ Q R → Cell Q R idMealy u) (proj₁ (fst-commute₁ ξ₁ ξ₂)) (proj₂ (fst-commute₁ ξ₁ ξ₂)) (ι₁ ⊙ᵥ universal₂ ξ₁ ξ₂)))
+    snd-commute₂ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} → 
+      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  → 
+      (Cell≡ ξ₂ (subst₂ (λ Q R → Cell Q R idMealy u) (proj₁ (snd-commute₁ ξ₁ ξ₂)) (proj₂ (snd-commute₁ ξ₁ ξ₂)) (ι₂ ⊙ᵥ universal₂ ξ₁ ξ₂)))
 
 
 
-scimmia : DoubleTerminal
-scimmia = record
+existDblTerminal : DoubleTerminal
+existDblTerminal = record
   { ⊤⊤ = ⊤
   ; universal₁ = λ { M → (λ { x → tt }) , λ { x → tt } }
   ; universal₂ = λ { M → record
@@ -377,31 +396,59 @@ scimmia = record
   ; unique = record { eq = refl }
   }
 
---open import Function.Bundles using (Bijection)
-
---⊥×W≅⊥ : {A} → Bijection ? -- ⊥ (⊥ × A)
---⊥×W≅⊥ = ?
-
-to : {A} → ⊥ → ⊥ × A
-to = λ { () }
-
-from : {A} → ⊥ × A → ⊥
-from = λ { () }
-
-bijTo : ∀ {A} {x} → ((to {A}) ∘ (from {A})) x ≡ x
-bijTo {x = () , a}
-
-bijFrom : ∀ {A} {x} → ((from {A}) ∘ (to {A})) x ≡ x
-bijFrom = refl
-
-coscimmia : DoubleInitial
-coscimmia = record
+coscimmia : (M : Mealy X Y) → (e : Mealy.E M) → DoubleInitial
+coscimmia M e = record
   { Ø = ⊥
   ; universal₁ = λ { M → (λ { () }) , λ { () } }
   ; universal₂ = λ { M → record
-    { α = {!  !}
+    { α = λ { tt → {!e !} }
     ; com-s = λ { {()} }
     ; com-d = λ { {()} }
     } }
   ; unique = record { eq = λ { {tt} → {!  !} } }
+  }
+
+
+-- fleshoutCellFromOne : {f : X → A} {g : X → B} {M : Mealy A B} → (e : Mealy.E M) → Cell f g idMealy M 
+-- fleshoutCellFromOne e0 = record 
+--   { α = λ { x → e0 } 
+--   ; com-s = {! !} 
+--   ; com-d = {! !} 
+--   }
+--
+
+postulate
+  dis : ∀ (M : Mealy X Y) → Mealy.E M 
+
+candidateDblSum : DoubleSum A B 
+candidateDblSum {A = A} {B = B} = record 
+  { sum = A ⊎ B 
+  ; in₁ = inj₁ 
+  ; in₂ = inj₂ 
+  ; ι₁ = record 
+    { α = λ { x → x } 
+    ; com-s = refl 
+    ; com-d = refl 
+    } 
+  ; ι₂ = record 
+    { α = λ { x → tt } 
+    ; com-s = refl 
+    ; com-d = refl 
+    } 
+  ; universal₁ = λ { {a = a} {a' = a'} {b = b} {b' = b'}
+    ξ₁ ξ₂ → (λ { (inj₁ x) → a x
+               ; (inj₂ y) → b y }) 
+          , (λ { (inj₁ x) → a' x
+               ; (inj₂ y) → b' y }) }
+  ; universal₂ = λ { {u = u} {a = a} {a' = a'} {b = b} {b' = b'}
+       ξ₁ ξ₂ → record 
+            { α = λ { tt → dis u } 
+            ; com-s = λ { {inj₁ x} {tt} → {! Cell.com-s ξ₁  !} 
+                        ; {inj₂ y} {tt} → {! Cell.com-s ξ₂ !} } 
+            ; com-d = λ { {x} {tt} → {! !} } 
+            } } 
+  ; fst-commute₁ = λ { ξ₁ ξ₂ → refl , refl } 
+  ; snd-commute₁ = λ { ξ₁ ξ₂ → refl , refl} 
+  ; fst-commute₂ = λ { ξ₁ ξ₂ → record { eq = {! !} } } 
+  ; snd-commute₂ = λ { ξ₁ ξ₂ → record { eq = {! !} } } 
   }
