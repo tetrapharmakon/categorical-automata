@@ -139,3 +139,15 @@ record MonadInMealy : Set (suc zero) where
     } where module U = Mealy U
 
 open MonadInMealy
+
+
+record miracolo {G₀ H₀ : Set} : Set (suc zero) where
+  field
+    Carrier : Set
+    G : IsMonoid G₀
+    H : IsMonoid H₀
+  module G = IsMonoid G
+  module H = IsMonoid H
+  field
+    ◁ : G actsOnᴸ X
+    ▷ : H actsOnᴸ X
