@@ -307,7 +307,7 @@ fattoideCruciale F = record
   }
 
 
-record DoubleDistro (M : DoubleMonad A) (N : DoubleMonad B) : Set (suc zero) where
+record DoubleMonadMap (M : DoubleMonad A) (N : DoubleMonad B) : Set (suc zero) where
   module M = DoubleMonad M 
   module N = DoubleMonad N
   field
@@ -318,6 +318,22 @@ record DoubleDistro (M : DoubleMonad A) (N : DoubleMonad B) : Set (suc zero) whe
     η-compat : Cell≡ (unitorᴸ U ⊙ᵥ ((M.η ⊙ₕ idCell U) ⊙ᵥ Ω)) (unitorᴿ⁻¹ U ⊙ᵥ (idCell U ⊙ₕ N.η))
 
 
+record DoubleDistroLaw (M : DoubleMonad A) (N : DoubleMonad A) : Set (suc zero) where
+  module M = DoubleMonad M 
+  module N = DoubleMonad N
+  field
+    Ω : Cell id id (N.M ⋄ M.M) (M.M ⋄ N.M) -- intertwina
+    -- eqn 
+    --μ-compat : Cell≡ ((M.μ ⊙ₕ idCell U) ⊙ᵥ Ω) ((assoc U M.M M.M ⊙ᵥ (idCell M.M ⊙ₕ Ω)) ⊙ᵥ ((assoc⁻¹ N.M U M.M ⊙ᵥ (Ω ⊙ₕ idCell N.M)) ⊙ᵥ (assoc N.M N.M U ⊙ᵥ (idCell U ⊙ₕ N.μ))))
+    ηM-compat : Cell≡ (unitorᴸ N.M ⊙ᵥ ((M.η ⊙ₕ idCell N.M) ⊙ᵥ Ω)) (unitorᴿ⁻¹ N.M ⊙ᵥ (idCell N.M ⊙ₕ M.η))
+    ηN-compat : Cell≡ (unitorᴿ⁻¹ M.M ⊙ᵥ ((idCell M.M ⊙ₕ N.η) ⊙ᵥ Ω)) (unitorᴸ M.M ⊙ᵥ (N.η ⊙ₕ idCell M.M))
+    μM-compat : Cell≡ 
+      ((M.μ ⊙ₕ idCell N.M) ⊙ᵥ Ω) 
+      (assoc N.M M.M M.M ⊙ᵥ ((idCell M.M ⊙ₕ Ω) ⊙ᵥ ((assoc⁻¹ M.M N.M M.M ⊙ᵥ ((Ω ⊙ₕ idCell M.M) ⊙ᵥ assoc M.M M.M N.M)) ⊙ᵥ (idCell N.M ⊙ₕ M.μ))))
+    μN-compat : Cell≡ 
+      ((idCell M.M ⊙ₕ N.μ) ⊙ᵥ Ω) 
+      (assoc⁻¹ N.M N.M M.M ⊙ᵥ ((Ω ⊙ₕ idCell N.M) ⊙ᵥ ((assoc N.M M.M N.M ⊙ᵥ ((idCell N.M ⊙ₕ Ω) ⊙ᵥ assoc⁻¹ {! !} {! !} {! !})) ⊙ᵥ (N.μ ⊙ₕ idCell M.M))))
+
 coalesce : {E : Set} → (f : A × E → E × B) → Mealy A B 
 coalesce {E = E} f = record 
   { E = E 
@@ -326,23 +342,91 @@ coalesce {E = E} f = record
   }
 
 
-fleshoutDistroLaw : (M : DoubleMonad A) (N : DoubleMonad B) (U : Mealy A B) → 
+
+fleshoutMonadMap : (M : DoubleMonad A) (N : DoubleMonad B) (U : Mealy A B) → 
   (g : Σ (Mealy.E (DoubleMonad.M M)) (λ x → Mealy.E U) → Σ (Mealy.E U) (λ x → Mealy.E (DoubleMonad.M N))) →
-  DoubleDistro M N 
-fleshoutDistroLaw M N U g = record 
+  DoubleMonadMap M N 
+fleshoutMonadMap M N U g = record 
   { U = U 
   ; Ω = record 
     { α = g -- funzione E × X → X × E' se E = carrier di M, E' = carrier di N, X = carrier di U
+    -- è una Mealy E --> E' tra i carrier delle monadi, con X come state space
+    -- δ : E × X → X and σ : E × X → E'
+    -- mediante U, List A agisce su X
+    -- mediante g, List |E| (E è già un monoide, via M) agisce su X
+    -- mediante M, c'è un bicrossed E ⋈ List A 
+    -- mediante N, c'è un bicrossed E' ⋈ List B 
+    -- 
     ; com-s = λ { {a} {e , x} → {! !} } 
-      -- N.s (U.s (a , g₁ (e , x)) , g₂ (e , x)) ≡ U.s (M.s (a , e) , x)
+      -- N.s (U.s (a , δ (e , x)) , σ (e , x)) ≡ U.s (M.s (a , e) , x)
     ; com-d = λ { {a} {e , x} → {! !} } 
-      -- (U.d (a , g₁ (e , x)) , N.d (U.s (a , g₁ (e , x)) , g₂ (e , x))) ≡ g (M.d (a , e) , U.d (M.s (a , e) , x))
+      -- (U.d (a , δ (e , x)) , N.d (U.s (a , δ (e , x)) , σ (e , x))) ≡ g (M.d (a , e) , U.d (M.s (a , e) , x))
+      -- translates into two separate eqns:
+      -- δ (M.d (a , e) , U.d (M.s (a , e) , x)) ≡ U.d (a , δ (e , x))
+      -- σ (M.d (a , e) , U.d (M.s (a , e) , x)) ≡ N.d (U.s (a , δ (e , x)) , σ (e , x)))
     } 
   ; μ-compat = record { eq = λ { {(e1 , e2) , x} → {! !} } }
-    -- g (M.μ (e1 , e2) , x) ≡ (g₁ (e1 , g₁ (e2 , x)) , N.μ (g₂ (e1 , g₁ (e2 , x)) , g₂ (e2 , x)))
+    -- g (M.μ (e1 , e2) , x) ≡ (δ (e1 , δ (e2 , x)) , N.μ (σ (e1 , δ (e2 , x)) , σ (e2 , x)))
+    -- translates into two separate eqns:
+    --  
+    -- δ (M.μ (e1 , e2) , x) ≡ δ (e1 , δ (e2 , x))
+    -- assioma di azione: E agisce su X
+    --
+    -- σ (M.μ (e1 , e2) , x) ≡ N.μ (σ (e1 , δ (e2 , x)) , σ (e2 , x))
+    -- (e1 ∙ e2) ⊙ₘ x ≡ (σ (e1 , e2 ⊗ x)) ∙ (σ (e2 , x))
+    -- fugality
   ; η-compat = record { eq = λ { {x} → {! !} } } 
-    -- g₁ (e₀ , x) ≡ x (identità del monoide M)
-    -- g₂ (e₀ , x) ≡ e₀' (identità del monoide N)
+    -- δ (e₀ , x) ≡ x (identità del monoide M)
+    -- σ (e₀ , x) ≡ e₀' (identità del monoide N)
   } where module M = Mealy (DoubleMonad.M M) 
           module N = Mealy (DoubleMonad.M N)
           module U = Mealy U
+
+fleshoutDL : (M N : DoubleMonad A) (g : Mealy.E (DoubleMonad.M M) × Mealy.E (DoubleMonad.M N) → Mealy.E (DoubleMonad.M N) × Mealy.E (DoubleMonad.M M)) → DoubleDistroLaw M N
+fleshoutDL M N g = record 
+  { Ω = record 
+    { α = g 
+    ; com-s = λ { {a} {m , n} → {! !} } -- M.s (N.s (a , g (m , n) .proj₁) , g (m , n) .proj₂) ≡ N.s (M.s (a , m) , n)
+    ; com-d = λ { {a} {m , n} → {! !} } -- (N.d (a , g (m , n) .proj₁) , M.d (N.s (a , g (m , n) .proj₁) , g (m , n) .proj₂)) ≡ g (M.d (a , m) , N.d (M.s (a , m) , n))
+    } 
+  ; ηM-compat = record { eq = λ { {n} → {! !} } }
+  ; ηN-compat = record { eq = λ { {m} → {! !} } }
+  ; μM-compat = record { eq = λ { {(m , m') , n} → {! !} } }
+  ; μN-compat = record { eq = λ { {m , n , n'} → {! !} } }
+  } where module M = Mealy (DoubleMonad.M M) 
+          module N = Mealy (DoubleMonad.M N)
+          module 𝕄 = DoubleMonad M 
+          module ℕ = DoubleMonad N
+     
+  
+
+open DoubleDistroLaw
+
+QuagliaPapero : {M : DoubleMonad A} {N : DoubleMonad A} → DoubleDistroLaw M N → DoubleMonad A 
+QuagliaPapero {M = M} {N = N} DL = record 
+  { M = 𝕄.M ⋄ ℕ.M 
+  ; η = unitorᴸ idMealy ⊙ᵥ (ℕ.η ⊙ₕ 𝕄.η) 
+  ; μ = ((assoc (DL.M.M ⋄ DL.N.M) DL.M.M DL.N.M ⊙ᵥ (idCell DL.N.M ⊙ₕ assoc⁻¹ DL.M.M DL.N.M DL.M.M)) ⊙ᵥ ((idCell ℕ.M ⊙ₕ (DL.Ω ⊙ₕ idCell 𝕄.M)) ⊙ᵥ ((idCell DL.N.M ⊙ₕ assoc DL.M.M DL.M.M DL.N.M) ⊙ᵥ assoc⁻¹ (DL.M.M ⋄ DL.M.M) DL.N.M DL.N.M))) ⊙ᵥ (ℕ.μ ⊙ₕ 𝕄.μ) 
+  ; unitᴸ = record { eq = λ { {n , m} → cong₂ _,_
+      (begin {! !} ≡⟨ cong (λ t → Cell.α DL.N.μ (Cell.α DL.N.η tt , t .proj₁)) (Cell≡.eq DL.ηM-compat) ⟩
+            {! !} ≡⟨ Cell≡.eq ℕ.unitᴸ ⟩
+            {! !} ∎)
+      (begin {! !} ≡⟨ cong (λ t → Cell.α DL.M.μ (t .proj₂ , m)) (Cell≡.eq DL.ηM-compat) ⟩
+            {! !} ≡⟨ Cell≡.eq 𝕄.unitᴸ ⟩
+            {! !} ∎)
+    } }
+  ; unitᴿ = record { eq = λ { {n , m} → cong₂ _,_ 
+    (begin {! !} ≡⟨ cong (λ t → Cell.α DL.N.μ (n , t .proj₁)) (Cell≡.eq DL.ηN-compat) ⟩
+           {! !} ≡⟨ Cell≡.eq ℕ.unitᴿ ⟩ 
+           {! !} ∎)
+    (begin {! !} ≡⟨ cong (λ t → Cell.α DL.M.μ (t .proj₂ , Cell.α DL.M.η tt)) (Cell≡.eq DL.ηN-compat) ⟩
+           {! !} ≡⟨ Cell≡.eq 𝕄.unitᴿ ⟩
+           {! !} ∎)
+    } }
+  ; μ-assoc = record { eq = λ { {(n , m) , (n' , m') , (n'' , m'')} → {! !} } }
+  } where module MM = Mealy (DoubleMonad.M M) 
+          module NN = Mealy (DoubleMonad.M N)
+          module 𝕄 = DoubleMonad M 
+          module ℕ = DoubleMonad N
+          open module DL = DoubleDistroLaw DL
+     
