@@ -101,35 +101,33 @@ idCell M = record
   ; com-d = refl
   }
 
-{-
 unitorᴸ : ∀ (M : Mealy X Y) → Cell id id M (M ⋄ idMealy)
 unitorᴸ M = record
   { α = λ { x → tt , x }
-  ; com-s = {! !}
-  ; com-d = {! !}
+  ; com-s = refl
+  ; com-d = refl
   }
 
 unitorᴿ : ∀ (M : Mealy X Y) → Cell id id (idMealy ⋄ M) M
 unitorᴿ M = record
   { α = λ { (e , _) → e }
-  ; com-s = {! !}
-  ; com-d = {! !}
+  ; com-s = refl
+  ; com-d = refl
   }
 
 unitorᴸ⁻¹ : ∀ (M : Mealy X Y) → Cell id id (M ⋄ idMealy) M
 unitorᴸ⁻¹ M = record
   { α = λ { (_ , e) → e }
-  ; com-s = {! !}
-  ; com-d = {!  !}
+  ; com-s = refl
+  ; com-d = refl
   }
 
 unitorᴿ⁻¹ : ∀ (M : Mealy X Y) → Cell id id M (idMealy ⋄ M)
 unitorᴿ⁻¹ M = record
   { α = λ { x → x , tt }
-  ; com-s = {!  !}
-  ; com-d = {!  !}
+  ; com-s = refl
+  ; com-d = refl
   }
--}
 
 assoc : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id (P ⋄ (N ⋄ M)) ((P ⋄ N) ⋄ M)
 assoc P N M = record

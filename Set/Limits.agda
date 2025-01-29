@@ -1,5 +1,5 @@
 {-# OPTIONS --allow-unsolved-metas #-}
-module Set.CoLimits where
+module Set.Limits where
 
 open import Set.Automata
 open import Set.LimitAutomata
@@ -88,41 +88,6 @@ record DoubleTerminal : Set (suc zero) where
     universal₁ : ∀ {X Y} (M : Mealy X Y) → (X → ⊤⊤) × (Y → ⊤⊤)
     universal₂ : ∀ {X Y} (M : Mealy X Y) → Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) M idMealy
     unique : ∀ {X Y} {M : Mealy X Y} {c : Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) M idMealy} → Cell≡ c (universal₂ M)
-
-record DoubleInitial : Set (suc zero) where
-  field
-    Ø : Set
-    universal₁ : ∀ {X Y} (M : Mealy X Y) → (Ø → X) × (Ø → Y)
-    universal₂ : ∀ {X Y} (M : Mealy X Y) → Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) idMealy M
-    unique : ∀ {X Y} {M : Mealy X Y} {c : Cell (proj₁ (universal₁ M)) (proj₂ (universal₁ M)) idMealy M} → Cell≡ c (universal₂ M)
-
-
-record DoubleSum (A B : Set) : Set (suc zero) where
-  field
-    sum : Set
-    in₁ : A → sum
-    in₂ : B → sum
-    ι₁ : Cell in₁ in₁ idMealy idMealy
-    ι₂ : Cell in₂ in₂ idMealy idMealy
-    universal₁ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} →
-      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u) →
-      (sum → X) × (sum → Y)
-    universal₂ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} →
-      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  →
-      (Cell (proj₁ (universal₁ ξ₁ ξ₂)) (proj₂ (universal₁ ξ₁ ξ₂)) idMealy u)
-    fst-commute₁ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} →
-      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  →
-      (proj₁ (universal₁ ξ₁ ξ₂) ∘ in₁ ≡ a) × (proj₂ (universal₁ ξ₁ ξ₂) ∘ in₁ ≡ a')
-    snd-commute₁ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} →
-      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  →
-      (proj₁ (universal₁ ξ₁ ξ₂) ∘ in₂ ≡ b) × (proj₂ (universal₁ ξ₁ ξ₂) ∘ in₂ ≡ b')
-    fst-commute₂ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} →
-      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  →
-      (Cell≡ ξ₁ (subst₂ (λ Q R → Cell Q R idMealy u) (proj₁ (fst-commute₁ ξ₁ ξ₂)) (proj₂ (fst-commute₁ ξ₁ ξ₂)) (ι₁ ⊙ᵥ universal₂ ξ₁ ξ₂)))
-    snd-commute₂ : ∀ {u : Mealy X Y} {a : A → X} {a' : A → Y} {b : B → X} {b' : B → Y} →
-      (ξ₁ : Cell a a' idMealy u) (ξ₂ : Cell b b' idMealy u)  →
-      (Cell≡ ξ₂ (subst₂ (λ Q R → Cell Q R idMealy u) (proj₁ (snd-commute₁ ξ₁ ξ₂)) (proj₂ (snd-commute₁ ξ₁ ξ₂)) (ι₂ ⊙ᵥ universal₂ ξ₁ ξ₂)))
-
 
 record DoubleProduct (A B : Set) : Set (suc zero) where
   field
@@ -222,7 +187,6 @@ record DoublePB (f : X → A) (g : Y → A) : Set (suc zero) where
           Cell≡ ξ₂ (subst₂ (λ Q R → Cell Q R u idMealy)
            (proj₁ (snd-commute₁ ξ₁ ξ₂))
            (proj₂ (snd-commute₁ ξ₁ ξ₂)) (universal₂ c c' ξ₁ ξ₂ ⊙ᵥ πY))
-
 
 existDblTerminal : DoubleTerminal
 existDblTerminal = record
@@ -326,160 +290,3 @@ existsDoublePullback f g = record
   ; snd-commute₂ = λ {  {x = x} {x' = x'} {y = y} {y' = y'} ξ₁ ξ₂ →
     record { eq = λ { {x} → refl } } }
   }
-
-
-{-
-
-
--- record SubobjectOfInterest (M : Mealy X Y) : Set (suc zero) where
---   private
---     module M = Mealy M
---   field
---     e : M.E
---     fix-d   : ∀ {x} → M.d (x , e) ≡ e
---     se-surj : ∀ {y} → ∃[ x ] (M.s (x , e) ≡ y)
-
-
--- fatto2 : (M : Mealy X Y) → (SOI : SubobjectOfInterest M) → Tabulator M
--- fatto2 {X = X} {Y = Y} M SOI =
---   let module M = Mealy M
---       module SOI = SubobjectOfInterest SOI in
---     record
---       { tab = X × Y
---       ; p = proj₁
---       ; q = proj₂
---       ; τ = record
---         { α = λ { _ → SOI.e }
---         ; com-s = λ { {x , y} → {! proj₂ (SOI.se-surj {y}) !} }
---         ; com-d = λ { {x , y} {tt} → SOI.fix-d }
---         }
---       ; universal = λ { {f = f} {g = g} ξ → < f , g > }
---       ; fst-commute₁ = λ { ξ → refl }
---       ; snd-commute₁ = λ { ξ → refl }
---       ; commute₂ = record { eq = λ { {x} → {! !} } } --impossible
---       }
-
--- I think conjoints do not exist
---
---
--- ConjointExperiment : (f : A → B) → (a : A) → Conjoint f
--- ConjointExperiment {A} {B} f a = record
---   { conj = record
---     { E = A × B
---     ; d = λ { (b , (a , b')) → a , f a }
---     ; s = λ { (b , (a , b')) → a }
---     }
---   ; Λ = record
---     { α = λ { tt → a , f a }
---     ; com-s = λ { {x} {tt} → {!  !} }
---     ; com-d = refl
---     }
---   ; Ξ = record
---     { α = λ { x → tt }
---     ; com-s = λ { {b} {(a , b')} → {!  !} } -- b ≡ f a
---     ; com-d = refl
---     }
---   ; zig = record { eq = refl }
---   ; zag = record { eq = {!  !} }
---   }
-
-ConjointExperiment2 : (f : A → B) → Conjoint f
-ConjointExperiment2 {A} {B} f = record
-  { conj = {! mealify (P∞ A)  !}
-  ; Λ = {!  !}
-  ; Ξ = {!  !}
-  ; zig = {!  !}
-  ; zag = {!  !}
-  }
--- initials and terminals
-
-
--- record DoubleComma (f : A → X) (M : Mealy B X) : Set (suc zero) where
---   field
---     comma : Set
---     P : Mealy comma A
---     q : comma → B -- two projections
---     φ : Cell q f P M
---     --
---     h-universal₁ : ∀ {h : U → A} {g : U → B} (ξ : Cell g (f ∘ h) idMealy M) → (U → comma)
---     h-commute₀ : ∀ {h : U → A} {g : U → B} (ξ : Cell g (f ∘ h) idMealy M) → ∀ {u : U} → q ∘ (h-universal₁ ξ) ≡ g
---     h-universal₂ : ∀ {h : U → A} {g : U → B} (ξ : Cell g (f ∘ h) idMealy M) → Cell (h-universal₁ ξ) h idMealy P
---     h-commute : ∀ {h : U → A} {g : U → B} (ξ : Cell g (f ∘ h) idMealy M) → Cell≡ ξ (subst (λ t → Cell t (f ∘ h) idMealy M) (h-commute₀ ξ) (h-universal₂ ξ ⊙ᵥ φ))
-
-
--- candidateDblComma : (f : A → X) (M : Mealy B X) (C : Set) → DoubleComma f M
--- candidateDblComma f M C = record
---  { comma = C
---  ; P = record
---    { E = {! !}
---    ; d = {! !}
---    ; s = {! !}
---    }
---  ; q = {! !}
---  ; φ = {! !}
---  ; h-universal₁ = {! !}
---  ; h-commute₀ = {! !}
---  ; h-universal₂ = {! !}
---  ; h-commute = {! !}
---  }
-
--- testInitial : (M : Mealy X Y) → (e : Mealy.E M) → DoubleInitial
--- testInitial M e = record
---   { Ø = ⊥
---   ; universal₁ = λ { M → (λ { () }) , λ { () } }
---   ; universal₂ = λ { M → record
---     { α = λ { tt → {!e !} }
---     ; com-s = λ { {()} }
---     ; com-d = λ { {()} }
---     } }
---   ; unique = record { eq = λ { {tt} → {!  !} } }
---   }
-
-
--- fleshoutCellFromOne : {f : X → A} {g : X → B} {M : Mealy A B} → (e : Mealy.E M) → Cell f g idMealy M
--- fleshoutCellFromOne e0 = record
---   { α = λ { x → e0 }
---   ; com-s = {! !}
---   ; com-d = {! !}
---   }
---
-
--- postulate
---   dis : ∀ (M : Mealy X Y) → Mealy.E M
-
--- candidateDblSum : DoubleSum A B
--- candidateDblSum {A = A} {B = B} = record
---   { sum = A ⊎ B
---   ; in₁ = inj₁
---   ; in₂ = inj₂
---   ; ι₁ = record
---     { α = λ { x → x }
---     ; com-s = refl
---     ; com-d = refl
---     }
---   ; ι₂ = record
---     { α = λ { x → tt }
---     ; com-s = refl
---     ; com-d = refl
---     }
---   ; universal₁ = λ { {a = a} {a' = a'} {b = b} {b' = b'}
---     ξ₁ ξ₂ → (λ { (inj₁ x) → a x
---                ; (inj₂ y) → b y })
---           , (λ { (inj₁ x) → a' x
---                ; (inj₂ y) → b' y }) }
---   ; universal₂ = λ { {u = u} {a = a} {a' = a'} {b = b} {b' = b'}
---        ξ₁ ξ₂ → record
---             { α = λ { tt → dis u }
---             ; com-s = λ { {inj₁ x} {tt} → {! Cell.com-s ξ₁  !}
---                         ; {inj₂ y} {tt} → {! Cell.com-s ξ₂ !} }
---             ; com-d = λ { {x} {tt} → {! !} }
---             } }
---   ; fst-commute₁ = λ { ξ₁ ξ₂ → refl , refl }
---   ; snd-commute₁ = λ { ξ₁ ξ₂ → refl , refl}
---   ; fst-commute₂ = λ { ξ₁ ξ₂ → record { eq = {! !} } }
---   ; snd-commute₂ = λ { ξ₁ ξ₂ → record { eq = {! !} } }
---   }
-  -- per ogni u, sceglie un punto del carrier di u, che sia sempre lo stesso; chiaramente, qesto non si può fare se u.E ha più di un elemento.
-
-
--}
