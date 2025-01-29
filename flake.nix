@@ -18,6 +18,7 @@
             (agda.withPackages
               (ps: [
                 ps.standard-library
+                ps.cubical
                 (ps.agda-categories.overrideAttrs (_: {
                   version = "master";
                   src = fetchFromGitHub {

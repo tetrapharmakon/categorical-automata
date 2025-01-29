@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K --cubical-compatible #-}
+
 module Set.Functors where
 
 open import Data.Product using (_,_; _×_; proj₁; proj₂; curry; map₂; map₁; swap)
@@ -13,7 +15,6 @@ open import Set.Automata
 open import Set.LimitAutomata
 open import Set.Soft
 open import Set.Utils
-open import Set.Equality
 
 private
   variable

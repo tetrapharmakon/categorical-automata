@@ -1,4 +1,5 @@
-{-# OPTIONS --allow-unsolved-metas #-}
+{-# OPTIONS --without-K --cubical-compatible #-}
+
 module Set.DoubleCategory where
 
 open import Set.Automata
@@ -100,6 +101,7 @@ idCell M = record
   ; com-d = refl
   }
 
+{-
 unitorᴸ : ∀ (M : Mealy X Y) → Cell id id M (M ⋄ idMealy)
 unitorᴸ M = record
   { α = λ { x → tt , x }
@@ -127,6 +129,7 @@ unitorᴿ⁻¹ M = record
   ; com-s = {!  !}
   ; com-d = {!  !}
   }
+-}
 
 assoc : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id (P ⋄ (N ⋄ M)) ((P ⋄ N) ⋄ M)
 assoc P N M = record

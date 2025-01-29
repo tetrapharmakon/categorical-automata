@@ -1,12 +1,14 @@
+{-# OPTIONS --without-K --cubical-compatible #-}
+
 module Set.LimitAutomata where
 
 open import Data.Product using (_,_; _×_; proj₁; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.List.NonEmpty using (List⁺; _∷⁺_; toList; [_])
-open import Data.List using (List; [];  _∷_)
+open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ)
 open import Data.Fin using (Fin)
-open import Data.Vec using (Vec; head; _∷ʳ_; _∷_)
+open import Data.Vec using (Vec; head; _∷ʳ_; _∷_; tail)
 
 open import Set.Automata
 
@@ -102,7 +104,7 @@ Queueₙ {A} n = record
   -- to be able to define output
   { E = Vec A (ℕ.suc n)
   -- Pop the head, push at the bottom, shift the rest
-  ; d = λ { (i , _ ∷ v) → v ∷ʳ i }
+  ; d = λ { (i , v) → tail v ∷ʳ i }
   -- Output the head of the queue
   ; s = head
   }
