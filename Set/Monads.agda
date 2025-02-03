@@ -34,40 +34,6 @@ record DoubleMonad (A : Set) : Set (suc zero) where
     unitᴿ : Cell≡ (unitorᴿ⁻¹ M ⊙ᵥ ((idCell M ⊙ₕ η) ⊙ᵥ μ)) (idCell M)
     μ-assoc : Cell≡ ((idCell M ⊙ₕ μ) ⊙ᵥ μ) (assoc⁻¹ M M M ⊙ᵥ ((μ ⊙ₕ idCell M) ⊙ᵥ μ))
 
--- fleshout di una monade
-fleshoutMonad : {A : Set}
-  (M : Mealy A A)
-  (e₀ : ⊤ → Mealy.E M)
-  (m : Mealy.E M × Mealy.E M → Mealy.E M) → DoubleMonad A
-fleshoutMonad M e₀ m = record
-  { M = M -- M : A × E --⟨d,s⟩-→ E × A;
-    -- d : A × E → E | action of List A on E
-    -- s : A × E → A | action of E on A
-  ; η = record
-    { α = e₀ -- ⊤ → E
-    ; com-s = {!  !}
-    -- ∀ {a : A} → s (a , e) ≡ a
-    -- a ◁ e ≡ a
-    ; com-d = {! !}
-    -- ∀ {a : A} → d (a , e) ≡ e
-    -- the identity of (E, ∙) is a fixpoint for d
-    }
-  ; μ = record
-    { α = m
-    ; com-s = λ { {a} {e , e′} → {! !} }
-    -- s (a , m (e , e′)) ≡ s (s (a , e) , e′)
-    -- s (a , e ∙ e′) ≡ s (s (a , e) , e′ )
-    -- a ◁ (e ∙ e′) ≡ (a ◁ e) ◁ e′
-    ; com-d = λ { {a} {e , e′} → {! !} }
-    -- d (a , m (e , e′)) ≡ m (d (a , e) , d (s (a , e) , e′))
-    -- a ⊛ (e ∙ e′) ≡ (a ⊛ e) ∙ ((a ◁ e) ⊛ e′)
-    }
-  ; unitᴸ = record { eq = {! !} } -- m (e , x) ≡ x
-  ; unitᴿ = record { eq = {! !} } -- m (x , e) ≡ x
-  ; μ-assoc = record { eq = λ { {e , e′ , e′′} → {! !} } }
-    -- PROBABLY m (e , m (e′ , e′′)) ≡ m (m(e , e′) , e′′)
-  } where module M = Mealy M
-
 record Algebraᴿ {X} (M : DoubleMonad A) : Set (suc zero) where
   private
     module M = DoubleMonad M
@@ -123,6 +89,7 @@ module _ (DM : DoubleMonad A) where
 
   module μ = Cell μ
   module η = Cell η
+  module μ-assoc = Cell≡ μ-assoc
 
   _⊗_ : A → E → E
   a ⊗ e = d (a , e)
@@ -142,7 +109,9 @@ module _ (DM : DoubleMonad A) where
   _⊙⁺_ : List A → E → List A
   [] ⊙⁺ e = []
   (x ∷ xs) ⊙⁺ e = s (x , xs ⊗⁺ e) ∷ (xs ⊙⁺ e)
-  -- la def deve essere tale che as ⊙⁺ (e ◦ e') ≡ (as ⊙⁺ e)
+  -- the definition must be such that: s ⊙⁺ (e ◦ e') ≡ (as ⊙⁺ e)
+
+  infixr 30 _◦_
 
   _◦_ : E → E → E
   e ◦ e′ = μ.α (e , e′)
@@ -156,35 +125,9 @@ module _ (DM : DoubleMonad A) where
     ; assoc = sym (Cell≡.eq μ-assoc)
     }
 
-  --fleshoutRightAlgebra : (a : Mealy X A) → (α : Mealy.E a × E → Mealy.E a) → Algebraᴿ DM
-  --fleshoutRightAlgebra P α = record
-    --{ P = P
-    --; θ = record
-      --{ α = α -- λ { (a , m) → {! !} } -- mappa di azione di E su S = Mealy.E a
-      --; com-s = λ { {x} {t , e} → {! !} } -- s (x , α (a , e)) ≡ M.s (s (x , a) , e) le due azioni sono "bilanciate"
-      --; com-d = λ { {x} {t , e} → {! !} } } -- d (x , α (a , e)) ≡ α (d (x , a) , M.d (s (x , a) , e))
-      ---- x ⊗ (a ★ m) ≡ (x ⊗ a) ★ (aˣ ⊗ m)
-    --; θ-unit = record { eq = λ { {e , tt} → {! !} } } -- α (e , η.α tt) ≡ e
-    --; θ-assoc = record { eq = λ { {(e , m) , m'} → {!  !} } } -- α (α (e , m) , m') ≡ α (e , μ.α (m , m'))
-    --} where module P = Mealy P
-
-  fleshoutLeftAlgebra : (P : Mealy A X) → (α : E × Mealy.E P → Mealy.E P) → Algebraᴸ DM
-  fleshoutLeftAlgebra P α = record
-    { P = P
-    ; θ = record
-      { α = α
-      ; com-s = λ { {a} {e , x} → {! !} } -- P.s (a , α (e , x)) ≡ P.s (s (a , e) , x)
-      ; com-d = λ { {a} {e , x} → {! !} } } -- P.d (a , α (e , x)) ≡ α (d (a , e) , P.d (s (a , e) , x))
-    ; θ-unit = record { eq = λ { {tt , x} → {! !} } }
-    ; θ-assoc = record { eq = λ { {m , m' , x} → {!  !} } } -- α (m , α (m' , x)) ≡ α (μ.α (m , m') , x)
-    } where module P = Mealy P
-
   d⁺-nact : (as : List A) (e e' : E) →
     as ⊗⁺ (e ◦ e') ≡ (as ⊗⁺ e) ◦ ((as ⊙⁺ e) ⊗⁺ e')
-  d⁺-nact [] e e' =
-    begin _ ≡⟨ sym (cong (e ◦_) {!   !}) ⟩
-          _ ≡⟨ sym (cong₂ _◦_ refl (cong (λ t → t ⊗⁺ e) refl)) ⟩
-          _ ∎
+  d⁺-nact [] e e' = refl
   d⁺-nact (a ∷ as) e e' =
     begin _ ≡⟨ cong (λ t → d (a , t)) (d⁺-nact as e e') ⟩
           _ ≡⟨ μ.com-d ⟩
@@ -192,11 +135,11 @@ module _ (DM : DoubleMonad A) where
           _ ∎
 
   s∞-nactR : {as bs : List A} {x : E} →
-    (as ++ bs) ⊙⁺ x ≡ (as ⊙⁺ d⁺ (bs , x)) ++ (bs ⊙⁺ x) -- (as ⊙⁺ x) ⊙⁺ y ≡ as ⊙⁺ (x ◦ y)
+    (as ++ bs) ⊙⁺ x ≡ (as ⊙⁺ d⁺ (bs , x)) ++ (bs ⊙⁺ x)
   s∞-nactR {as = []} {bs = bs} {x} = refl
   s∞-nactR {as = a ∷ as} {bs = bs} {x} =
     cong₂ _∷_
-      (cong (λ t → s (a , t)) (d⁺-assoc M {x = _}))
+      (cong (λ t → s (a , t)) (sym (d⁺-assoc M {x = as} {y = bs})))
       (s∞-nactR {as = as})
 
   sUnitAxiom : ∀ {as} → as ⊙⁺ e₀ ≡ as
@@ -207,36 +150,45 @@ module _ (DM : DoubleMonad A) where
           _ ≡⟨ cong (λ t → t ∷ as) η.com-s ⟩
           _ ∎
 
-  miliorfo-lemma : ∀ {as} → (e : E) → e ◦ (as ⊗⁺ e₀) ≡ e
-  miliorfo-lemma {[]} e = Cell≡.eq unitᴿ
-  miliorfo-lemma {a ∷ as} e =
-    begin _ ≡⟨ cong (λ t → e ◦ t) (d⁺-fixpoint {as = _}) ⟩
+  cancel-⊗e₀ : ∀ {as} → (e : E) → e ◦ (as ⊗⁺ e₀) ≡ e
+  cancel-⊗e₀ {[]} e = Cell≡.eq unitᴿ
+  cancel-⊗e₀ {a ∷ as} e =
+    begin _ ≡⟨ cong (λ t → e ◦ d (a , t)) (d⁺-fixpoint {as = as}) ⟩
+          _ ≡⟨ cong (λ t → e ◦ t) η.com-d ⟩
           _ ≡⟨ Cell≡.eq unitᴿ ⟩
           _ ∎
+
+  ⊙⁺-act : ∀ {as x y} → (as ⊙⁺ y) ⊙⁺ x ≡ as ⊙⁺ μ.α (y , x)
+  ⊙⁺-act {[]} = refl
+  ⊙⁺-act {x ∷ as} =
+    begin s (s (x , d⁺ (as , _)) , d⁺ (as ⊙⁺ _ , _)) ∷ (as ⊙⁺ _) ⊙⁺ _
+            ≡⟨ cong (λ t → t ∷ (as ⊙⁺ _) ⊙⁺ _) (sym μ.com-s) ⟩
+          s (x , μ.α (d⁺ (as , _) , d⁺ (as ⊙⁺ _ , _))) ∷ _
+            ≡⟨ cong (λ t → s (x , t) ∷ (as ⊙⁺ _) ⊙⁺ _) (sym (d⁺-nact as _ _)) ⟩
+          s (x , d⁺ (as , μ.α (_ , _))) ∷ (as ⊙⁺ _) ⊙⁺ _
+            ≡⟨ cong (λ t → s (x , d⁺ (as , μ.α (_ , _))) ∷ t) (⊙⁺-act {as}) ⟩
+          s (x , d⁺ (as , μ.α (_ , _))) ∷ as ⊙⁺ μ.α (_ , _) ∎
 
   bicrossedMonoid : IsMonoid (E × List A)
   bicrossedMonoid = record
     { _∙_ = λ { (x , as) (x' , bs) → x ◦ (as ⊗⁺ x') , (as ⊙⁺ x') ++ bs }
     ; u = e₀ , []
-    ; unitᴿ = λ { {e , as} → cong₂ _,_ (miliorfo-lemma {as = as} e) (trans (++-identityʳ _) (sUnitAxiom {as = _})) }
+    ; unitᴿ = λ { {e , as} → cong₂ _,_ (cancel-⊗e₀ {as = as} e) (trans (++-identityʳ _) (sUnitAxiom {as = _})) }
     ; unitᴸ = λ { {e , as} → cong₂ _,_ (Cell≡.eq unitᴸ) refl }
-    ; assoc = λ { {x , as} {y , bs} {z , cs} → cong₂ _,_ {!  !}
-      (begin {!  !} ≡⟨ cong (λ t → t ++ cs) (s∞-nactR {as = as ⊙⁺ y} {bs = bs} {x = z}) ⟩
-             {!  !} ≡⟨ ++-assoc ((as ⊙⁺ y) ⊙⁺ d⁺ (bs , z)) (bs ⊙⁺ z) cs ⟩
-             {!  !} ≡⟨ {! ++-assoc  !} ⟩
-             {!  !} ≡⟨ sym (cong (λ t → t ++ (bs ⊙⁺ z ++ cs)) {! d⁺-nact as y (d⁺ (bs , z))  !}) ⟩
-             {!  !} ∎) }
+    ; assoc = λ { {x , as} {y , bs} {z , cs} →
+      cong₂ _,_
+        (begin (x ◦ d⁺ (as , y)) ◦ d⁺ (as ⊙⁺ y ++ bs , z) ≡⟨ cong ((x ◦ d⁺ (as , y)) ◦_) (sym (d⁺-assoc M {a = z} {x = as ⊙⁺ y} {y = bs})) ⟩
+               (x ◦ (d⁺ (as , y))) ◦ d⁺ (as ⊙⁺ y , d⁺ (bs , z)) ≡⟨ sym μ-assoc.eq ⟩
+               x ◦ (d⁺ (as , y)) ◦ d⁺ (as ⊙⁺ y , d⁺ (bs , z)) ≡⟨ cong (λ t → μ.α (x , t)) (sym (d⁺-nact as y (d⁺ (bs , z)))) ⟩
+               x ◦ d⁺ (as , y ◦ d⁺ (bs , z)) ∎)
+        (begin (as ⊙⁺ y ++ bs) ⊙⁺ z ++ cs
+                 ≡⟨ cong (λ t → t ++ cs) (s∞-nactR {as = as ⊙⁺ y} {bs = bs} {x = z}) ⟩
+               ((as ⊙⁺ y) ⊙⁺ d⁺ (bs , z) ++ bs ⊙⁺ z) ++ cs
+                 ≡⟨ ++-assoc ((as ⊙⁺ y) ⊙⁺ d⁺ (bs , z)) (bs ⊙⁺ z) cs ⟩
+               ((as ⊙⁺ y) ⊙⁺ d⁺ (bs , z)) ++ bs ⊙⁺ z ++ cs
+                 ≡⟨ cong (λ t → t ++ (bs ⊙⁺ z ++ cs)) (⊙⁺-act {as = as} {x = d⁺ (bs , z)} {y = y}) ⟩
+               (as ⊙⁺ μ.α (y , d⁺ (bs , z))) ++ bs ⊙⁺ z ++ cs ∎) }
     }
-
-   -- (as ⊙⁺ y) ⊙⁺ d⁺ (bs , z) ++ bs ⊙⁺ z ++ cs
-   -- ≡
-   -- as ⊙⁺ μ.α (y , d⁺ (bs , z)) ++ bs ⊙⁺ z ++ cs
-
---μ.α (μ.α (x , d⁺ (as , y)) , d⁺ (as ⊙⁺ y ++ bs , z))
---μ.α (x , d⁺ (as , μ.α (y , d⁺ (bs , z))))
---
---
---
 {-
   module _ (U : Algebraᴿ DM) where
     open Algebraᴿ U
@@ -261,52 +213,59 @@ module _ (DM : DoubleMonad A) where
       }
 -}
 
-dd : {F : Mealy A A} → A × List (Mealy.E F) → List (Mealy.E F)
-dd {F = F} (a , []) = []
-dd {F = F} (a , e ∷ es) = F.d (a , e) ∷ (dd {F = F} (a , es))
-  where module F = Mealy F
+module _ (F : Mealy A A) where
+  module F = Mealy F
 
-ss : {F : Mealy A A} → A × List (Mealy.E F) → A
-ss {F = F} (a , []) = a
-ss {F = F} (a , e ∷ es) = ss (F.s (a , e) , Data.List.reverse es)
-  where module F = Mealy F
+  dd : A × List (Mealy.E F) → List (Mealy.E F)
+  dd (a , []) = []
+  dd (a , e ∷ es) = F.d (a , e) ∷ dd (a , es)
 
-extension : (F : Mealy A A) → Mealy A A
-extension F = record
-  { E = List F.E
-  ; d = dd {F = F}
-  ; s = ss {F = F}
-  } where module F = Mealy F
+  ss : A × List (Mealy.E F) → A
+  ss (a , []) = a
+  ss (a , e ∷ es) = ss (F.s (a , e) , es)
 
---C1 : ss (a , xs ++ es) ≡ ss (ss (a , xs) , es)
+  -- ss : A × List (Mealy.E F) → A
+  -- ss (a , es) = ss a (Data.List.reverse es)
 
-C2 : ∀ {F : Mealy A A} {a : A} {xs es} → dd {F = F} (a , xs ++ es) ≡ dd {F = F} (a , xs) ++ dd {F = F} (ss {F = F} (a , xs) , es)
-C2 {F = F} {xs = []} {es = es} = cong (λ t → dd (t , es)) {! refl  !} -- true
-  where module F = Mealy F
-C2 {F = F} {xs = x ∷ xs} {es = []} = {!  !} -- true
-C2 {F = F} {a = a} {xs = x ∷ xs} {es = e ∷ es} = cong (λ t → F.d (a , x) ∷ t) C2
-  where module F = Mealy F
-
-
-fattoideCruciale : (F : Mealy A A) → DoubleMonad A
-fattoideCruciale F = record
-  { M = extension F
-  ; η = record
-    { α = λ { x → [] }
-    ; com-s = λ { {a} {tt} → {!  !} } -- true
-    ; com-d = λ { {a} {tt} → refl }
+  extension : (F : Mealy A A) → Mealy A A
+  extension F = record
+    { E = List F.E
+    ; d = dd
+    ; s = ss
     }
-  ; μ = record
-    { α = λ { (xs , ys) → xs ++ ys }
-    ; com-s = λ { {a} {xs , es} → {!  !} } -- ""
-    ; com-d = λ { {a} {xs , es} → {!  !} } -- ""
-    }
-  ; unitᴸ = record { eq = refl }
-  ; unitᴿ = record { eq = {!  !} } -- unitality di ++
-  ; μ-assoc = record { eq = λ { {xs , ys , zs} → {!  !} } } -- assoc di ++
-  }
+
+  --C1 : ss (a , xs ++ es) ≡ ss (ss (a , xs) , es)
+
+  -- C2 : ∀ {F : Mealy A A} {a : A} {xs es}
+  --    → dd (a , xs ++ es)
+  --    ≡ dd (a , xs)
+  --    ++ dd (ss (a , xs) , es)
+  -- C2 {xs = []} {es = es} = cong (λ t → dd (t , es)) {! refl  !} -- true
+  --   where module F = Mealy F
+  -- C2 {xs = x ∷ xs} {es = []} = {!  !} -- true
+  -- C2 {a = a} {xs = x ∷ xs} {es = e ∷ es} = cong (λ t → F.d (a , x) ∷ t) C2
+  --   where module F = Mealy F
+
+  -- fattoideCruciale : (F : Mealy A A) → DoubleMonad A
+  -- fattoideCruciale F = record
+  --   { M = extension F
+  --   ; η = record
+  --     { α = λ { x → [] }
+  --     ; com-s = λ { {a} {tt} → refl }
+  --     ; com-d = λ { {a} {tt} → refl }
+  --     }
+  --   ; μ = record
+  --     { α = λ { (xs , ys) → xs ++ ys }
+  --     ; com-s = λ { {a} {xs , es} → {!  !} } -- ""
+  --     ; com-d = λ { {a} {xs , es} → {!  !} } -- ""
+  --     }
+  --   ; unitᴸ = record { eq = refl }
+  --   ; unitᴿ = record { eq = ++-identityʳ _ } -- unitality di ++
+  --   ; μ-assoc = record { eq = λ { {xs , ys , zs} → {!  !} } } -- assoc di ++
+  --   }
 
 
+{-
 record DoubleMonadMap (M : DoubleMonad A) (N : DoubleMonad B) : Set (suc zero) where
   module M = DoubleMonad M
   module N = DoubleMonad N
@@ -334,6 +293,7 @@ record DoubleDistroLaw (M : DoubleMonad A) (N : DoubleMonad A) : Set (suc zero) 
       ((idCell M.M ⊙ₕ N.μ) ⊙ᵥ Ω)
       (assoc⁻¹ N.M N.M M.M ⊙ᵥ ((Ω ⊙ₕ idCell N.M) ⊙ᵥ ((assoc N.M M.M N.M ⊙ᵥ ((idCell N.M ⊙ₕ Ω) ⊙ᵥ assoc⁻¹ M.M N.M N.M)) ⊙ᵥ (N.μ ⊙ₕ idCell M.M))))
 
+{-
 coalesce : {E : Set} → (f : A × E → E × B) → Mealy A B
 coalesce {E = E} f = record
   { E = E
@@ -398,7 +358,7 @@ fleshoutDL M N g = record
           module 𝕄 = DoubleMonad M
           module ℕ = DoubleMonad N
 
-
+-}
 
 open DoubleDistroLaw
 
@@ -429,3 +389,4 @@ QuagliaPapero {M = M} {N = N} DL = record
           module 𝕄 = DoubleMonad M
           module ℕ = DoubleMonad N
           open module DL = DoubleDistroLaw DL
+-}

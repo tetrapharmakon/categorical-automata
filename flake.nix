@@ -19,15 +19,16 @@
               (ps: [
                 ps.standard-library
                 ps.cubical
-                (ps.agda-categories.overrideAttrs (_: {
-                  version = "master";
-                  src = fetchFromGitHub {
-                    repo = "agda-categories";
-                    owner = "agda";
-                    rev = "master";
-                    hash = "sha256-P+RY++LXB3Tsp+MMEtzi//ydTSwE7IeiPBBHXvAHC4w=";
-                  };
-                }))
+                ps.agda-categories
+                # (ps.agda-categories.overrideAttrs (_: {
+                #   version = "master";
+                #   src = fetchFromGitHub {
+                #     repo = "agda-categories";
+                #     owner = "agda";
+                #     rev = "master";
+                #     hash = "sha256-P+RY++LXB3Tsp+MMEtzi//ydTSwE7IeiPBBHXvAHC4w=";
+                #   };
+                # }))
               ]))
           ];
         };
