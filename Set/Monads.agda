@@ -3,18 +3,15 @@ module Set.Monads where
 
 open import Set.Automata
 open import Set.Automata.Properties
---open import Set.LimitAutomata
---open import Set.Functors
 open import Set.DoubleCategory
 open import Set.CrossedModules
 open import Level
 open import Function
 
 open import Data.Empty
-open import Data.Product
+open import Data.Product using (curry; uncurry; _×_; _,_; proj₁; proj₂)
 open import Data.List
-open import Data.List.NonEmpty
-open import Data.List.Properties using (++-identityʳ; ++-assoc)
+open import Data.List.Properties using (++-identityʳ; ++-assoc; reverse-++; foldr-++; map-++)
 open import Data.Sum hiding (map)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality
@@ -216,53 +213,51 @@ module _ (DM : DoubleMonad A) where
 module _ (F : Mealy A A) where
   module F = Mealy F
 
-  dd : A × List (Mealy.E F) → List (Mealy.E F)
-  dd (a , []) = []
-  dd (a , e ∷ es) = F.d (a , e) ∷ dd (a , es)
+  dd : A → List (Mealy.E F) → List (Mealy.E F)
+  dd a = map (λ e → F.d (a , e))
 
-  ss : A × List (Mealy.E F) → A
-  ss (a , []) = a
-  ss (a , e ∷ es) = ss (F.s (a , e) , es)
-
-  -- ss : A × List (Mealy.E F) → A
-  -- ss (a , es) = ss a (Data.List.reverse es)
+  ss : A → List (Mealy.E F) → A
+  ss a = foldr (flip (curry F.s)) a ∘ reverse
 
   extension : (F : Mealy A A) → Mealy A A
   extension F = record
     { E = List F.E
-    ; d = dd
-    ; s = ss
+    ; d = uncurry dd
+    ; s = uncurry ss
     }
 
-  --C1 : ss (a , xs ++ es) ≡ ss (ss (a , xs) , es)
-
-  -- C2 : ∀ {F : Mealy A A} {a : A} {xs es}
-  --    → dd (a , xs ++ es)
-  --    ≡ dd (a , xs)
-  --    ++ dd (ss (a , xs) , es)
-  -- C2 {xs = []} {es = es} = cong (λ t → dd (t , es)) {! refl  !} -- true
-  --   where module F = Mealy F
-  -- C2 {xs = x ∷ xs} {es = []} = {!  !} -- true
-  -- C2 {a = a} {xs = x ∷ xs} {es = e ∷ es} = cong (λ t → F.d (a , x) ∷ t) C2
-  --   where module F = Mealy F
-
-  -- fattoideCruciale : (F : Mealy A A) → DoubleMonad A
-  -- fattoideCruciale F = record
-  --   { M = extension F
-  --   ; η = record
-  --     { α = λ { x → [] }
-  --     ; com-s = λ { {a} {tt} → refl }
-  --     ; com-d = λ { {a} {tt} → refl }
-  --     }
-  --   ; μ = record
-  --     { α = λ { (xs , ys) → xs ++ ys }
-  --     ; com-s = λ { {a} {xs , es} → {!  !} } -- ""
-  --     ; com-d = λ { {a} {xs , es} → {!  !} } -- ""
-  --     }
-  --   ; unitᴸ = record { eq = refl }
-  --   ; unitᴿ = record { eq = ++-identityʳ _ } -- unitality di ++
-  --   ; μ-assoc = record { eq = λ { {xs , ys , zs} → {!  !} } } -- assoc di ++
-  --   }
+  fattoideCruciale : (F : Mealy A A) → DoubleMonad A
+  fattoideCruciale F = record
+    { M = extension F
+    ; η = record
+      { α = λ { x → [] }
+      ; com-s = λ { {a} {tt} → refl }
+      ; com-d = λ { {a} {tt} → refl }
+      }
+    ; μ = record
+      { α = λ { (xs , ys) → xs ++ ys }
+      ; com-s = λ { {a} {xs , es} → begin
+          foldr (flip (curry F.s)) a
+            (reverse (xs ++ es))
+            ≡⟨ cong (foldr (flip (curry F.s)) a) (reverse-++ xs es) ⟩
+          foldr (flip (curry F.s)) a (reverse es ++ reverse xs)
+            ≡⟨ foldr-++ (flip (curry F.s)) a (reverse es) (reverse xs) ⟩
+          foldr (flip (curry F.s))
+               (foldr (flip (curry F.s)) a (reverse xs))
+               (reverse es) ∎ } -- ""
+      ; com-d = λ { {a} {xs , es} → begin
+         map (λ e → F.d (a , e)) (xs ++ es) ≡⟨ map-++ _ xs es ⟩
+         map (λ e → F.d (a , e)) xs ++ map (λ e → F.d (a , e)) es
+           ≡⟨ cong (map (λ e → F.d (a , e)) xs ++_)
+             {!   !} ⟩
+         {!   !} ≡⟨ {!   !} ⟩
+         map (λ e → F.d (a , e)) xs
+          ++ map {!  !} es ∎ } -- ""
+      }
+    ; unitᴸ = record { eq = refl }
+    ; unitᴿ = record { eq = ++-identityʳ _ }
+    ; μ-assoc = record { eq = λ { {xs , ys , zs} → sym (++-assoc xs ys zs) } }
+    }
 
 
 {-
