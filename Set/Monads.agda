@@ -10,6 +10,7 @@ open import Function
 
 open import Data.Empty
 open import Data.Product using (curry; uncurry; _×_; _,_; proj₁; proj₂)
+open import Data.Product.Properties using (,-injectiveʳ; ,-injectiveˡ)
 open import Data.List
 open import Data.List.Properties using (++-identityʳ; ++-assoc; reverse-++; foldr-++; map-++)
 open import Data.Sum hiding (map)
@@ -30,6 +31,9 @@ record DoubleMonad (A : Set) : Set (suc zero) where
     unitᴸ : Cell≡ (unitorᴸ M ⊙ᵥ ((η ⊙ₕ idCell M) ⊙ᵥ μ)) (idCell M)
     unitᴿ : Cell≡ (unitorᴿ⁻¹ M ⊙ᵥ ((idCell M ⊙ₕ η) ⊙ᵥ μ)) (idCell M)
     μ-assoc : Cell≡ ((idCell M ⊙ₕ μ) ⊙ᵥ μ) (assoc⁻¹ M M M ⊙ᵥ ((μ ⊙ₕ idCell M) ⊙ᵥ μ))
+  module unitᴸ = Cell≡ unitᴸ
+  module unitᴿ = Cell≡ unitᴿ
+  module μ-assoc = Cell≡ μ-assoc
 
 record Algebraᴿ {X} (M : DoubleMonad A) : Set (suc zero) where
   private
@@ -56,12 +60,6 @@ record Algebraᴸ {X} (M : DoubleMonad A) : Set (suc zero) where
 -- product obtained from M acts
 -}
 
---thing : (M : MonadInMealy) →
-  --(a : Algebra {X = S} M) →
-  --(List A × E) × Mealy.E (Algebra.a a) → Mealy.E (Algebra.a a)
---thing a M ((as , e) , s) = Cell.α θ (s , {! MonadInMealy.d∞ as e !})
-  --where open module a = Algebra M
-
 ----------- Interlude on list monoids -----------
 
 ListMonoid : ∀ A → IsMonoid (List A)
@@ -86,7 +84,6 @@ module _ (DM : DoubleMonad A) where
 
   module μ = Cell μ
   module η = Cell η
-  module μ-assoc = Cell≡ μ-assoc
 
   _⊗_ : A → E → E
   a ⊗ e = d (a , e)
@@ -186,81 +183,7 @@ module _ (DM : DoubleMonad A) where
                  ≡⟨ cong (λ t → t ++ (bs ⊙⁺ z ++ cs)) (⊙⁺-act {as = as} {x = d⁺ (bs , z)} {y = y}) ⟩
                (as ⊙⁺ μ.α (y , d⁺ (bs , z))) ++ bs ⊙⁺ z ++ cs ∎) }
     }
-{-
-  module _ (U : Algebraᴿ DM) where
-    open Algebraᴿ U
 
-    module θ = Cell θ
-
-    superchiappe : (as bs : List A) {x : Mealy.E a} {e e' : E} →
-      θ.α (θ.α (x , d⁺ (as , e)) , d⁺ (bs , e')) ≡ θ.α (x , d⁺ (as ⊙⁺ e' ++ bs , μ.α (e , d⁺ (as , e'))))
-    superchiappe [] [] {x = x} {e = e} {e' = e'} = Cell≡.eq θ-assoc {x = (x , e) , e'}
-    superchiappe [] (b ∷ []) {x = x} {e = e} {e' = e'} = trans (Cell≡.eq θ-assoc) (cong (λ t → θ.α (x , t)) {! !})
-    superchiappe [] (b ∷ (b' ∷ bs)) {x = x} {e = e} {e' = e'} = trans (Cell≡.eq θ-assoc) (cong (λ t → θ.α (x , t)) {! !})
-    superchiappe (a ∷ as) [] {x = x} {e = e} {e' = e'} = {! !}
-    superchiappe (a ∷ as) (b ∷ bs) = {! !}
-
-
-
-    fattoide : bicrossedMonoid actsOnᴿ (Mealy.E a)
-    fattoide = record
-      { act = λ { x (e , as) → θ.α (x , d⁺ (as , e)) }
-      ; unit = λ { {a} → Cell≡.eq θ-unit }
-      ; assoc = λ { {a} {e , as} {e' , bs} → superchiappe as bs }
-      }
--}
-
-module _ (F : Mealy A A) where
-  module F = Mealy F
-
-  dd : A → List (Mealy.E F) → List (Mealy.E F)
-  dd a = map (λ e → F.d (a , e))
-
-  ss : A → List (Mealy.E F) → A
-  ss a = foldr (flip (curry F.s)) a ∘ reverse
-
-  extension : (F : Mealy A A) → Mealy A A
-  extension F = record
-    { E = List F.E
-    ; d = uncurry dd
-    ; s = uncurry ss
-    }
-
-  fattoideCruciale : (F : Mealy A A) → DoubleMonad A
-  fattoideCruciale F = record
-    { M = extension F
-    ; η = record
-      { α = λ { x → [] }
-      ; com-s = λ { {a} {tt} → refl }
-      ; com-d = λ { {a} {tt} → refl }
-      }
-    ; μ = record
-      { α = λ { (xs , ys) → xs ++ ys }
-      ; com-s = λ { {a} {xs , es} → begin
-          foldr (flip (curry F.s)) a
-            (reverse (xs ++ es))
-            ≡⟨ cong (foldr (flip (curry F.s)) a) (reverse-++ xs es) ⟩
-          foldr (flip (curry F.s)) a (reverse es ++ reverse xs)
-            ≡⟨ foldr-++ (flip (curry F.s)) a (reverse es) (reverse xs) ⟩
-          foldr (flip (curry F.s))
-               (foldr (flip (curry F.s)) a (reverse xs))
-               (reverse es) ∎ } -- ""
-      ; com-d = λ { {a} {xs , es} → begin
-         map (λ e → F.d (a , e)) (xs ++ es) ≡⟨ map-++ _ xs es ⟩
-         map (λ e → F.d (a , e)) xs ++ map (λ e → F.d (a , e)) es
-           ≡⟨ cong (map (λ e → F.d (a , e)) xs ++_)
-             {!   !} ⟩
-         {!   !} ≡⟨ {!   !} ⟩
-         map (λ e → F.d (a , e)) xs
-          ++ map {!  !} es ∎ } -- ""
-      }
-    ; unitᴸ = record { eq = refl }
-    ; unitᴿ = record { eq = ++-identityʳ _ }
-    ; μ-assoc = record { eq = λ { {xs , ys , zs} → sym (++-assoc xs ys zs) } }
-    }
-
-
-{-
 record DoubleMonadMap (M : DoubleMonad A) (N : DoubleMonad B) : Set (suc zero) where
   module M = DoubleMonad M
   module N = DoubleMonad N
@@ -271,117 +194,76 @@ record DoubleMonadMap (M : DoubleMonad A) (N : DoubleMonad B) : Set (suc zero) w
     μ-compat : Cell≡ ((M.μ ⊙ₕ idCell U) ⊙ᵥ Ω) ((assoc U M.M M.M ⊙ᵥ (idCell M.M ⊙ₕ Ω)) ⊙ᵥ ((assoc⁻¹ N.M U M.M ⊙ᵥ (Ω ⊙ₕ idCell N.M)) ⊙ᵥ (assoc N.M N.M U ⊙ᵥ (idCell U ⊙ₕ N.μ))))
     η-compat : Cell≡ (unitorᴸ U ⊙ᵥ ((M.η ⊙ₕ idCell U) ⊙ᵥ Ω)) (unitorᴿ⁻¹ U ⊙ᵥ (idCell U ⊙ₕ N.η))
 
-
 record DoubleDistroLaw (M : DoubleMonad A) (N : DoubleMonad A) : Set (suc zero) where
-  module M = DoubleMonad M
-  module N = DoubleMonad N
+  private
+    module M = DoubleMonad M
+    module N = DoubleMonad N
   field
     Ω : Cell id id (N.M ⋄ M.M) (M.M ⋄ N.M) -- intertwina
-    -- eqn
-    --μ-compat : Cell≡ ((M.μ ⊙ₕ idCell U) ⊙ᵥ Ω) ((assoc U M.M M.M ⊙ᵥ (idCell M.M ⊙ₕ Ω)) ⊙ᵥ ((assoc⁻¹ N.M U M.M ⊙ᵥ (Ω ⊙ₕ idCell N.M)) ⊙ᵥ (assoc N.M N.M U ⊙ᵥ (idCell U ⊙ₕ N.μ))))
-    ηM-compat : Cell≡ (unitorᴸ N.M ⊙ᵥ ((M.η ⊙ₕ idCell N.M) ⊙ᵥ Ω)) (unitorᴿ⁻¹ N.M ⊙ᵥ (idCell N.M ⊙ₕ M.η))
-    ηN-compat : Cell≡ (unitorᴿ⁻¹ M.M ⊙ᵥ ((idCell M.M ⊙ₕ N.η) ⊙ᵥ Ω)) (unitorᴸ M.M ⊙ᵥ (N.η ⊙ₕ idCell M.M))
+
+    ηM-compat : Cell≡ (unitorᴸ N.M ⊙ᵥ (M.η ⊙ₕ idCell N.M) ⊙ᵥ Ω) (unitorᴿ⁻¹ N.M ⊙ᵥ (idCell N.M ⊙ₕ M.η))
+    ηN-compat : Cell≡ (unitorᴿ⁻¹ M.M ⊙ᵥ (idCell M.M ⊙ₕ N.η) ⊙ᵥ Ω) (unitorᴸ M.M ⊙ᵥ (N.η ⊙ₕ idCell M.M))
+
     μM-compat : Cell≡
       ((M.μ ⊙ₕ idCell N.M) ⊙ᵥ Ω)
       (assoc N.M M.M M.M ⊙ᵥ ((idCell M.M ⊙ₕ Ω) ⊙ᵥ ((assoc⁻¹ M.M N.M M.M ⊙ᵥ ((Ω ⊙ₕ idCell M.M) ⊙ᵥ assoc M.M M.M N.M)) ⊙ᵥ (idCell N.M ⊙ₕ M.μ))))
     μN-compat : Cell≡
       ((idCell M.M ⊙ₕ N.μ) ⊙ᵥ Ω)
       (assoc⁻¹ N.M N.M M.M ⊙ᵥ ((Ω ⊙ₕ idCell N.M) ⊙ᵥ ((assoc N.M M.M N.M ⊙ᵥ ((idCell N.M ⊙ₕ Ω) ⊙ᵥ assoc⁻¹ M.M N.M N.M)) ⊙ᵥ (N.μ ⊙ₕ idCell M.M))))
+  module Ω = Cell Ω
+  module ηM-compat = Cell≡ ηM-compat
+  module ηN-compat = Cell≡ ηN-compat
+  module μM-compat = Cell≡ μM-compat
+  module μN-compat = Cell≡ μN-compat
 
-{-
-coalesce : {E : Set} → (f : A × E → E × B) → Mealy A B
-coalesce {E = E} f = record
-  { E = E
-  ; d = proj₁ ∘ f
-  ; s = proj₂ ∘ f
-  }
+module _ {M N : DoubleMonad A} (D : DoubleDistroLaw M N) where
+  module M = DoubleMonad M
+  module N = DoubleMonad N
+  module DL = DoubleDistroLaw D
+  module Nμ = Cell N.μ
+  module Mμ = Cell M.μ
+  module Nη = Cell N.η
+  module Mη = Cell M.η
 
-
-
-fleshoutMonadMap : (M : DoubleMonad A) (N : DoubleMonad B) (U : Mealy A B) →
-  (g : Σ (Mealy.E (DoubleMonad.M M)) (λ x → Mealy.E U) → Σ (Mealy.E U) (λ x → Mealy.E (DoubleMonad.M N))) →
-  DoubleMonadMap M N
-fleshoutMonadMap M N U g = record
-  { U = U
-  ; Ω = record
-    { α = g -- works E × X → X × E' if E = carrier of M, E' = carrier of N, X = carrier of U
-    -- is a Mealy E --> It 'between the carriers of the monads, with X as state space
-    -- δ : E × X → X and σ : E × X → E'
-    -- through U, List A acts on X
-    -- through g, List |E| (E is already a monoid, via M) acts on X
-    -- through M, there exists a bicrossed E ⋈ List A
-    -- through N, there exists a bicrossed E' ⋈ List B
-    --
-    ; com-s = λ { {a} {e , x} → {!  !} }
-      -- N.s (U.s (a , δ (e , x)) , σ (e , x)) ≡ U.s (M.s (a , e) , x)
-    ; com-d = λ { {a} {e , x} → {!  !} }
-      -- (U.d (a , δ (e , x)) , N.d (U.s (a , δ (e , x)) , σ (e , x))) ≡ g (M.d (a , e) , U.d (M.s (a , e) , x))
-      -- translates into two separate eqns:
-      -- δ (M.d (a , e) , U.d (M.s (a , e) , x)) ≡ U.d (a , δ (e , x))
-      -- σ (M.d (a , e) , U.d (M.s (a , e) , x)) ≡ N.d (U.s (a , δ (e , x)) , σ (e , x)))
+  QuagliaPapero : DoubleMonad A
+  QuagliaPapero = record
+    { M = M.M ⋄ N.M
+    ; η = unitorᴸ idMealy ⊙ᵥ (N.η ⊙ₕ M.η)
+    ; μ = assoc (M.M ⋄ N.M) M.M N.M
+      ⊙ᵥ (idCell N.M ⊙ₕ assoc⁻¹ M.M N.M M.M)
+      ⊙ᵥ (idCell N.M ⊙ₕ DL.Ω ⊙ₕ idCell M.M)
+      ⊙ᵥ (idCell N.M ⊙ₕ assoc M.M M.M N.M)
+      ⊙ᵥ assoc⁻¹ (M.M ⋄ M.M) N.M N.M
+      ⊙ᵥ N.μ ⊙ₕ M.μ
+    ; unitᴸ = record { eq = λ { {n , m} →
+      begin Nμ.α (Nη.α tt , DL.Ω.α (Mη.α tt , n) .proj₁) ,
+            Mμ.α (DL.Ω.α (Mη.α tt , n) .proj₂ , m)
+              ≡⟨ cong₂ _,_ (cong (λ t → Nμ.α (Nη.α tt , t .proj₁)) (DL.ηM-compat.eq))
+                           (cong (λ t → Mμ.α (t .proj₂ , m)) DL.ηM-compat.eq) ⟩
+            Nμ.α (Nη.α tt , n) , Mμ.α (Mη.α tt , m)
+              ≡⟨ cong₂ _,_ N.unitᴸ.eq M.unitᴸ.eq ⟩
+            n , m ∎ } }
+    ; unitᴿ =  record { eq = λ { {n , m} →
+      begin Nμ.α (n , DL.Ω.α (m , Nη.α tt) .proj₁) ,
+            Mμ.α (DL.Ω.α (m , Nη.α tt) .proj₂ , Mη.α tt)
+              ≡⟨ cong₂ _,_ (cong (λ t → Nμ.α  (n , t .proj₁)) DL.ηN-compat.eq)
+                           (cong (λ t → Mμ.α (t .proj₂ , Mη.α tt)) DL.ηN-compat.eq) ⟩
+            Nμ.α (n , Nη.α tt) , Mμ.α (m , Mη.α tt)   ≡⟨ cong₂ _,_ N.unitᴿ.eq M.unitᴿ.eq ⟩
+            n , m ∎ } }
+    ; μ-assoc = record { eq = λ { {(n , m) , (n' , m') , (n'' , m'')} →
+      let (e , r) =  DL.Ω.α (m' , n'') in
+      let (e' , r') = DL.Ω.α (m , n') in
+       begin Nμ.α (n , DL.Ω.α (m , Nμ.α (n' , e)) .proj₁) ,
+             Mμ.α (DL.Ω.α (m , Nμ.α (n' , e)) .proj₂ , Mμ.α (r , m''))
+               ≡⟨ cong₂ _,_ (cong (λ t → Nμ.α (_ , t)) (,-injectiveˡ DL.μN-compat.eq))
+                            (cong (λ t → Mμ.α (t , Mμ.α (r , m''))) (,-injectiveʳ DL.μN-compat.eq)) ⟩
+             Nμ.α (n , Nμ.α (e' , DL.Ω.α (r' , e) .proj₁)) ,
+             Mμ.α (DL.Ω.α (r' , e) .proj₂ , Mμ.α (r , m'')) ≡⟨ cong₂ _,_ N.μ-assoc.eq M.μ-assoc.eq ⟩
+             Nμ.α (Nμ.α (n , e') , DL.Ω.α (r' , e) .proj₁) ,
+             Mμ.α (Mμ.α (DL.Ω.α (r' , e) .proj₂ , r) , m'')
+               ≡⟨ cong₂ _,_ (cong (λ t → Nμ.α (Nμ.α (n , e') , t)) (sym (,-injectiveˡ DL.μM-compat.eq)))
+                            (cong (λ t → Mμ.α (t , m'')) (sym (,-injectiveʳ DL.μM-compat.eq))) ⟩
+             Nμ.α (Nμ.α (n , e') , DL.Ω.α (Mμ.α (r' , m') , n'') .proj₁) ,
+               Mμ.α (DL.Ω.α (Mμ.α (r' , m') , n'') .proj₂ , m'') ∎
+      } }
     }
-  ; μ-compat = record { eq = λ { {(e1 , e2) , x} → {!  !} } }
-    -- g (M.μ (e1 , e2) , x) ≡ (δ (e1 , δ (e2 , x)) , N.μ (σ (e1 , δ (e2 , x)) , σ (e2 , x)))
-    -- translates into two separate eqns:
-    --
-    -- δ (M.μ (e1 , e2) , x) ≡ δ (e1 , δ (e2 , x))
-    -- action axiom: E agisce su X
-    --
-    -- σ (M.μ (e1 , e2) , x) ≡ N.μ (σ (e1 , δ (e2 , x)) , σ (e2 , x))
-    -- (e1 ∙ e2) ⊙ₘ x ≡ (σ (e1 , e2 ⊗ x)) ∙ (σ (e2 , x))
-    -- fugality
-  ; η-compat = record { eq = λ { {x} → {!  !} } }
-    -- δ (e₀ , x) ≡ x (identity of the monoid M)
-    -- σ (e₀ , x) ≡ e₀' (identity of the monoid N)
-  } where module M = Mealy (DoubleMonad.M M)
-          module N = Mealy (DoubleMonad.M N)
-          module U = Mealy U
-
-fleshoutDL : (M N : DoubleMonad A) (g : Mealy.E (DoubleMonad.M M) × Mealy.E (DoubleMonad.M N) → Mealy.E (DoubleMonad.M N) × Mealy.E (DoubleMonad.M M)) → DoubleDistroLaw M N
-fleshoutDL M N g = record
-  { Ω = record
-    { α = g
-    ; com-s = λ { {a} {m , n} → {!  !} } -- M.s (N.s (a , g (m , n) .proj₁) , g (m , n) .proj₂) ≡ N.s (M.s (a , m) , n)
-    ; com-d = λ { {a} {m , n} → {!  !} } -- (N.d (a , g (m , n) .proj₁) , M.d (N.s (a , g (m , n) .proj₁) , g (m , n) .proj₂)) ≡ g (M.d (a , m) , N.d (M.s (a , m) , n))
-    }
-  ; ηM-compat = record { eq = λ { {n} → {!  !} } }
-  ; ηN-compat = record { eq = λ { {m} → {!  !} } }
-  ; μM-compat = record { eq = λ { {(m , m') , n} → {!  !} } }
-  ; μN-compat = record { eq = λ { {m , n , n'} → {!  !} } }
-  } where module M = Mealy (DoubleMonad.M M)
-          module N = Mealy (DoubleMonad.M N)
-          module 𝕄 = DoubleMonad M
-          module ℕ = DoubleMonad N
-
--}
-
-open DoubleDistroLaw
-
-QuagliaPapero : {M : DoubleMonad A} {N : DoubleMonad A} → DoubleDistroLaw M N → DoubleMonad A
-QuagliaPapero {M = M} {N = N} DL = record
-  { M = 𝕄.M ⋄ ℕ.M
-  ; η = unitorᴸ idMealy ⊙ᵥ (ℕ.η ⊙ₕ 𝕄.η)
-  ; μ = ((assoc (DL.M.M ⋄ DL.N.M) DL.M.M DL.N.M ⊙ᵥ (idCell DL.N.M ⊙ₕ assoc⁻¹ DL.M.M DL.N.M DL.M.M)) ⊙ᵥ ((idCell ℕ.M ⊙ₕ (DL.Ω ⊙ₕ idCell 𝕄.M)) ⊙ᵥ ((idCell DL.N.M ⊙ₕ assoc DL.M.M DL.M.M DL.N.M) ⊙ᵥ assoc⁻¹ (DL.M.M ⋄ DL.M.M) DL.N.M DL.N.M))) ⊙ᵥ (ℕ.μ ⊙ₕ 𝕄.μ)
-  ; unitᴸ = record { eq = λ { {n , m} → cong₂ _,_
-      (begin {!  !} ≡⟨ cong (λ t → Cell.α DL.N.μ (Cell.α DL.N.η tt , t .proj₁)) (Cell≡.eq DL.ηM-compat) ⟩
-            {!  !} ≡⟨ Cell≡.eq ℕ.unitᴸ ⟩
-            {!  !} ∎)
-      (begin {!  !} ≡⟨ cong (λ t → Cell.α DL.M.μ (t .proj₂ , m)) (Cell≡.eq DL.ηM-compat) ⟩
-            {!  !} ≡⟨ Cell≡.eq 𝕄.unitᴸ ⟩
-            {!  !} ∎)
-    } }
-  ; unitᴿ = record { eq = λ { {n , m} → cong₂ _,_
-    (begin {!  !} ≡⟨ cong (λ t → Cell.α DL.N.μ (n , t .proj₁)) (Cell≡.eq DL.ηN-compat) ⟩
-           {!  !} ≡⟨ Cell≡.eq ℕ.unitᴿ ⟩
-           {!  !} ∎)
-    (begin {!  !} ≡⟨ cong (λ t → Cell.α DL.M.μ (t .proj₂ , Cell.α DL.M.η tt)) (Cell≡.eq DL.ηN-compat) ⟩
-           {!  !} ≡⟨ Cell≡.eq 𝕄.unitᴿ ⟩
-           {!  !} ∎)
-    } }
-  ; μ-assoc = record { eq = λ { {(n , m) , (n' , m') , (n'' , m'')} → {!  !} } }
-  } where module MM = Mealy (DoubleMonad.M M)
-          module NN = Mealy (DoubleMonad.M N)
-          module 𝕄 = DoubleMonad M
-          module ℕ = DoubleMonad N
-          open module DL = DoubleDistroLaw DL
--}

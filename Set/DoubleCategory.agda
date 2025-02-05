@@ -47,6 +47,9 @@ record Cell (lv : A → A') (rv : B → B') (lh : Mealy A B) (rh : Mealy A' B') 
     com-s : ∀ {x y} → rh.s (lv x , α y) ≡ rv (lh.s (x , y))
     com-d : ∀ {x y} → rh.d (lv x , α y) ≡  α (lh.d (x , y))
 
+infixr 25 _⊙ᵥ_
+infixr 35 _⊙ₕ_
+
 _⊙ᵥ_ : ∀ {lh : Mealy A B} {boh : Mealy A'' B''} {rh : Mealy A' B'}
   → Cell lv' rv' lh boh
   → Cell lv rv boh rh
