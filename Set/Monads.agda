@@ -55,11 +55,6 @@ record Algebraᴸ {X} (M : DoubleMonad A) : Set (suc zero) where
     θ-unit : Cell≡ ((M.η ⊙ₕ idCell P) ⊙ᵥ θ) (unitorᴸ⁻¹ P)
     θ-assoc : Cell≡ ((idCell M.M ⊙ₕ θ) ⊙ᵥ θ) (assoc⁻¹ P M.M M.M ⊙ᵥ ((M.μ ⊙ₕ idCell P) ⊙ᵥ θ))
 
-{-
--- Theorem: Let M be a monad; an algebra is a set on which the bicrossed
--- product obtained from M acts
--}
-
 ----------- Interlude on list monoids -----------
 
 ListMonoid : ∀ A → IsMonoid (List A)
@@ -217,16 +212,17 @@ record DoubleDistroLaw (M : DoubleMonad A) (N : DoubleMonad A) : Set (suc zero) 
   module μN-compat = Cell≡ μN-compat
 
 module _ {M N : DoubleMonad A} (D : DoubleDistroLaw M N) where
-  module M = DoubleMonad M
-  module N = DoubleMonad N
-  module DL = DoubleDistroLaw D
-  module Nμ = Cell N.μ
-  module Mμ = Cell M.μ
-  module Nη = Cell N.η
-  module Mη = Cell M.η
+  private
+    module M = DoubleMonad M
+    module N = DoubleMonad N
+    module DL = DoubleDistroLaw D
+    module Nμ = Cell N.μ
+    module Mμ = Cell M.μ
+    module Nη = Cell N.η
+    module Mη = Cell M.η
 
-  QuagliaPapero : DoubleMonad A
-  QuagliaPapero = record
+  DL→doubleMonad : DoubleMonad A
+  DL→doubleMonad = record
     { M = M.M ⋄ N.M
     ; η = unitorᴸ idMealy ⊙ᵥ (N.η ⊙ₕ M.η)
     ; μ = assoc (M.M ⋄ N.M) M.M N.M
