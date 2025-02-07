@@ -159,31 +159,3 @@ record MonadInMealy (A : Set) : Set (suc zero) where
                                   (++-assoc (s∞ as (y ∙ d∞ bs z)) (s∞ bs z) cs)) ⟩
             x ∙ d∞ as (y ∙ d∞ bs z)                , s∞ as (y ∙ d∞ bs z) ++ s∞ bs z ++ cs ∎ }
     }
-
-  BicrossedActsOnE : BiCrossed actsOnᴸ E
-  BicrossedActsOnE = record
-    { act = λ { (m , as) x → as ⊗⋆ (m ∙ x) }
-    ; unit = unitᴸ --unitᴿ
-    ; assoc = λ { {a} {x} {y} → lemma {a} {x} {y} }
-    -- λ { {a} {x , x'} {y , y'} →
-    --   begin d∞ x' (d∞ y' (a ∙ y) ∙ x) ≡⟨ cong (λ t → d∞ x' (t ∙ x)) (⊗⋆-act y' a y) ⟩
-    --         d∞ x' ((d∞ y' a ∙ d∞ (s∞ y' a) y) ∙ x) ≡⟨ ⊗⋆-act x' _ _ ⟩
-    --         d∞ x' (d∞ y' a ∙ d∞ (s∞ y' a) y) ∙ d∞ (s∞ x' (d∞ y' a ∙ d∞ (s∞ y' a) y)) x ≡⟨ cong (_∙ d∞ (s∞ x' (d∞ y' a ∙ d∞ (s∞ y' a) y)) x) (⊗⋆-act x' _ _) ⟩
-    --         (d∞ x' (d∞ y' a) ∙ d∞ (s∞ x' (d∞ y' a)) (d∞ (s∞ y' a) y)) ∙ d∞ (s∞ x' (d∞ y' a ∙ d∞ (s∞ y' a) y)) x ≡⟨ assoc ⟩
-    --         d∞ x' (d∞ y' a) ∙ (d∞ (s∞ x' (d∞ y' a)) (d∞ (s∞ y' a) y) ∙ d∞ (s∞ x' (d∞ y' a ∙ d∞ (s∞ y' a) y)) x)
-    --           ≡⟨ {!  !} ⟩
-    --         {!   !} ≡⟨ {!   !} ⟩
-    --         {!   !} ≡⟨ {! ⊗⋆-act (s∞ x' y) _ _  !} ⟩
-    --         d∞ (s∞ x' y) (d∞ y' a) ∙ (d∞ (s∞ (s∞ x' y) (d∞ y' a)) (d∞ (s∞ y' a) x) ∙ d∞ (s∞ (s∞ (s∞ x' y) (d∞ y' a)) (d∞ (s∞ y' a) x)) (d∞ (s∞ (s∞ y' a) x) (d∞ x' y)))
-    --           ≡⟨ cong (λ t → d∞ (s∞ x' y) (d∞ y' a) ∙ t) (sym (⊗⋆-act (s∞ (s∞ x' y) (d∞ y' a)) _ _)) ⟩
-    --         (d∞ (s∞ x' y) (d∞ y' a) ∙ d∞ (s∞ (s∞ x' y) (d∞ y' a)) (d∞ (s∞ y' a) x ∙ d∞ (s∞ (s∞ y' a) x) (d∞ x' y)))
-    --           ≡⟨ cong (λ t → d∞ (s∞ x' y) (d∞ y' a) ∙ d∞ (s∞ (s∞ x' y) (d∞ y' a)) t) (sym (⊗⋆-act (s∞ y' a) x (d∞ x' y))) ⟩
-    --         d∞ (s∞ x' y) (d∞ y' a) ∙ d∞ (s∞ (s∞ x' y) (d∞ y' a)) (d∞ (s∞ y' a) (x ∙ d∞ x' y)) ≡⟨ sym (⊗⋆-act (s∞ x' y) _ _) ⟩
-    --         d∞ (s∞ x' y) (d∞ y' a ∙ d∞ (s∞ y' a) (x ∙ d∞ x' y)) ≡⟨ cong (d∞ (s∞ x' y)) (sym (⊗⋆-act y' a _)) ⟩
-    --         d∞ (s∞ x' y) (d∞ y' (a ∙ (x ∙ d∞ x' y))) ≡⟨ sym (d∞-++ (s∞ x' y) y' _ ) ⟩
-    --         d∞ (s∞ x' y ++ y') (a ∙ (x ∙ d∞ x' y)) ∎ }
-    } where
-    lemma : ∀ {a : E} {x y : E × List A} → _
-    lemma {a} {x , []} {y , v} = {!   !}
-    lemma {a} {x , x₁ ∷ c} {y , []} = {!   !}
-    lemma {a} {x , x₁ ∷ c} {y , x₂ ∷ v} = {!   !}
