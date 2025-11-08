@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K --cubical-compatible #-}
+
 module Set.Soft where
 
 open import Data.Product using (map₂; _,_; _×_)

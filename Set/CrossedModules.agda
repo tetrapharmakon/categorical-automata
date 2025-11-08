@@ -50,7 +50,7 @@ record _actsOnᴿ_ (M : IsMonoid M₀) (A : Set) : Set (suc zero) where
     --act₁ : ∀ {s : S} → M.e ⋆ s ≡ s
     --act∙ : ∀ {x y : M.Carrier} {s : S} → (_∙_ x y) ⋆ s ≡ x ⋆ (y ⋆ s)
 
-record MonadInMealy : Set (suc zero) where
+record MonadInMealy (A : Set) : Set (suc zero) where
   field
     E : Set
     _⊗_ : A → E → E
@@ -60,22 +60,26 @@ record MonadInMealy : Set (suc zero) where
   open IsMonoid monE
 
   field
-    mistero : ∀ {a e e'} → a ⊗ (e ∙ e') ≡ ((a ⊗ e) ∙ ((a ⊙ e) ⊗ e'))
-
-  field
-    fix : ∀ {a} → a ⊗ u ≡ u
+    act-⊗ : ∀ {a e e'} → a ⊗ (e ∙ e') ≡ ((a ⊗ e) ∙ ((a ⊙ e) ⊗ e'))
+    act-⊙ : ∀ {a e e'} → a ⊙ (e ∙ e') ≡ (a ⊙ e) ⊙ e'
+    id-u : ∀ {a} → a ⊗ u ≡ u
+    id-a : ∀ {a} → a ⊙ u ≡ a
 
   d∞ : List A → E → E
   d∞ [] e = e
-  d∞ (x ∷ xs) e = x ⊗ (d∞ xs e)
+  d∞ (x ∷ xs) e = x ⊗ d∞ xs e
 
   s∞ : List A → E → List A
   s∞ [] e = []
-  s∞ (a ∷ as) e = (a ⊙ (d∞ as e)) ∷ (s∞ as e)
+  s∞ (a ∷ as) e = (a ⊙ d∞ as e) ∷ s∞ as e
 
-  lemmuzzo : ∀ {as} → d∞ as u ≡ u
-  lemmuzzo {[]} = refl
-  lemmuzzo {x ∷ as} = trans (cong (λ t → x ⊗ t) lemmuzzo) fix
+  d∞-id : ∀ as → d∞ as u ≡ u
+  d∞-id [] = refl
+  d∞-id (x ∷ as) = trans (cong (x ⊗_) (d∞-id as)) id-u
+
+  s∞-id : ∀ as → s∞ as u ≡ as
+  s∞-id [] = refl
+  s∞-id (x ∷ as) = cong₂ _∷_ (trans (cong (x ⊙_) (d∞-id as)) id-a) (s∞-id as)
 
   _⊗⋆_ : List A → E → E
   as ⊗⋆ e = d∞ as e
@@ -86,31 +90,47 @@ record MonadInMealy : Set (suc zero) where
   _∙⋆_ : E → E → E
   e ∙⋆ e' = e ∙ e'
 
-  A1 : ∀ {k h h'} → k ⊗⋆ (h ∙ h') ≡ ((k ⊗⋆ h) ∙ ((k ⊙⋆ h) ⊗⋆ h'))
-  A1 {[]} {h} {h'} = refl
-  A1 {x ∷ xs} {h} {h'} =
+  d∞-++ : ∀ xs ys h → d∞ (xs ++ ys) h ≡ d∞ xs (d∞ ys h)
+  d∞-++ [] ys h = refl
+  d∞-++ (x ∷ xs) ys h = cong (x ⊗_) (d∞-++ xs ys h)
+
+  s∞-++ : ∀ xs ys h → s∞ (xs ++ ys) h ≡ s∞ xs (d∞ ys h) ++ s∞ ys h
+  s∞-++ [] ys h = refl
+  s∞-++ (x ∷ xs) ys h = cong₂ _∷_ (cong (x ⊙_) (d∞-++ xs ys h)) (s∞-++ xs ys h)
+
+  ⊗⋆-act : ∀ k h h' → k ⊗⋆ (h ∙ h') ≡ ((k ⊗⋆ h) ∙ ((k ⊙⋆ h) ⊗⋆ h'))
+  ⊗⋆-act [] h h' = refl
+  ⊗⋆-act (x ∷ xs) h h' =
     begin x ⊗ d∞ xs (h ∙ h')
-            ≡⟨ cong (λ t → x ⊗ t) (A1 {xs} {h} {h'}) ⟩
+            ≡⟨ cong (λ t → x ⊗ t) (⊗⋆-act xs h h') ⟩
           x ⊗ (d∞ xs h ∙ d∞ (s∞ xs h) h')
-            ≡⟨ mistero ⟩
+            ≡⟨ act-⊗ ⟩
           ((x ∷ xs) ⊗⋆ h) ∙ (((x ∷ xs) ⊙⋆ h) ⊗⋆ h')
             ∎
 
-  A2 : ∀ {k k' h} → (k ++ k') ⊙⋆ h ≡ (k ⊙⋆ (k' ⊗⋆ h)) ++ (k' ⊙⋆ h)
-  A2 {[]} {[]} {h} = refl
-  A2 {[]} {x ∷ k'} {h} = refl
-  A2 {x ∷ k} {[]} {h} =
+  ⊙⋆-act : ∀ k h h' → k ⊙⋆ (h ∙ h') ≡ (k ⊙⋆ h) ⊙⋆ h'
+  ⊙⋆-act [] h h' = refl
+  ⊙⋆-act (x ∷ k) h h' = cong₂ _∷_
+    (begin x ⊙ d∞ k (h ∙ h') ≡⟨ cong (x ⊙_) (⊗⋆-act k h h') ⟩
+           x ⊙ (d∞ k h ∙ d∞ (s∞ k h) h') ≡⟨ act-⊙ ⟩
+           (x ⊙ d∞ k h) ⊙ d∞ (s∞ k h) h' ∎)
+    (⊙⋆-act k h h')
+
+  ⊙⋆-resp-++ : ∀ {k k' h} → (k ++ k') ⊙⋆ h ≡ (k ⊙⋆ (k' ⊗⋆ h)) ++ (k' ⊙⋆ h)
+  ⊙⋆-resp-++ {[]} {[]} {h} = refl
+  ⊙⋆-resp-++ {[]} {x ∷ k'} {h} = refl
+  ⊙⋆-resp-++ {x ∷ k} {[]} {h} =
     begin (x ⊙ d∞ (k ++ []) h) ∷ s∞ (k ++ []) h
             ≡⟨ cong (λ t → (x ⊙ d∞ t h) ∷ s∞ t h) (++-identityʳ k) ⟩
           (x ⊙ d∞ k ([] ⊗⋆ h)) ∷ s∞ k ([] ⊗⋆ h)
             ≡⟨ sym (++-identityʳ _) ⟩
           (x ⊙ d∞ k ([] ⊗⋆ h)) ∷ s∞ k ([] ⊗⋆ h) ++ ([] ⊙⋆ h)
             ∎
-  A2 {x ∷ xs} {y ∷ ys} {h} =
+  ⊙⋆-resp-++ {x ∷ xs} {y ∷ ys} {h} =
     begin (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ s∞ (xs ++ y ∷ ys) h
-            ≡⟨ cong (λ t → (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ t) (A2 {xs} {y ∷ ys} {h}) ⟩
+            ≡⟨ cong (λ t → (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ t) (⊙⋆-resp-++ {xs} {y ∷ ys} {h}) ⟩
           (x ⊙ d∞ (xs ++ y ∷ ys) h) ∷ s∞ xs (y ⊗ d∞ ys h) ++ (y ⊙ d∞ ys h) ∷ s∞ ys h
-            ≡⟨ cong (λ t → t ∷ (s∞ xs (y ⊗ d∞ ys h) ++ (y ⊙ d∞ ys h) ∷ s∞ ys h)) (cong (λ r → x ⊙ r) {! !}) ⟩
+            ≡⟨ cong (λ t → t ∷ (s∞ xs (y ⊗ d∞ ys h) ++ (y ⊙ d∞ ys h) ∷ s∞ ys h)) (cong (λ r → x ⊙ r) (d∞-++ xs (y ∷ ys) h)) ⟩
           (x ⊙ d∞ xs ((y ∷ ys) ⊗⋆ h)) ∷ s∞ xs ((y ∷ ys) ⊗⋆ h) ++ ((y ∷ ys) ⊙⋆ h)
             ∎
 
@@ -121,33 +141,21 @@ record MonadInMealy : Set (suc zero) where
     ; unitᴿ = λ { {x , as} →
         begin
           (x ∙ (as ⊗⋆ u)) , (as ⊙⋆ u) ++ []
-            ≡⟨ cong (λ t → (_∙_ x (d∞ as u)) , t) (++-identityʳ _) ⟩
-          (x ∙ d∞ _ u) , s∞ as u
-            ≡⟨ cong₂ _,_ (trans (cong (λ t → x ∙ t) lemmuzzo) unitᴿ) {! !} ⟩
-            -- questo segue da una eq. di Mealy
+            ≡⟨ cong (λ t → (x ∙ d∞ as u) , t) (++-identityʳ (s∞ as u)) ⟩
+          x ∙ d∞ as u , s∞ as u
+            ≡⟨ cong₂ _,_ (trans (cong (λ t → x ∙ t) (d∞-id as)) unitᴿ)
+                        (s∞-id as) ⟩
           x , as
             ∎ }
     ; unitᴸ = λ { {x , as} → cong (λ t → t , as) unitᴸ }
-    ; assoc = λ { {x , as} {y , bs} {z , cs} → {! !} }
+    ; assoc = λ { {x , as} {y , bs} {z , cs} → begin
+            (x ∙ d∞ as y) ∙ d∞ (s∞ as y ++ bs) z   , s∞ (s∞ as y ++ bs) z ++ cs
+              ≡⟨ cong₂ _,_ (trans assoc (cong (λ t → (x ∙ (d∞ as y ∙ t))) (d∞-++ (s∞ as y) bs z)))
+                           (cong (_++ cs) (s∞-++ (s∞ as y) bs z)) ⟩
+            x ∙ (d∞ as y ∙ d∞ (s∞ as y) (d∞ bs z)) , (s∞ (s∞ as y) (d∞ bs z) ++ s∞ bs z) ++ cs
+              ≡⟨ cong₂ _,_ (cong (x ∙_) (sym (⊗⋆-act as y (d∞ bs z))))
+                           (trans (cong (λ t → (t ++ s∞ bs z) ++ cs)
+                                  (sym (⊙⋆-act as y (d∞ bs z))))
+                                  (++-assoc (s∞ as (y ∙ d∞ bs z)) (s∞ bs z) cs)) ⟩
+            x ∙ d∞ as (y ∙ d∞ bs z)                , s∞ as (y ∙ d∞ bs z) ++ s∞ bs z ++ cs ∎ }
     }
-
-  theorem : {U : Mealy X A} → BiCrossed actsOnᴸ (Mealy.E U)
-  theorem {U = U} = record
-    { act = λ { (m , as) x → {!  (as ⊗⋆ m) !} } -- e ∙ d(as , x) ?
-    ; unit = {! !}
-    ; assoc = {! !}
-    } where module U = Mealy U
-
-open MonadInMealy
-
-
-record miracolo {G₀ H₀ : Set} : Set (suc zero) where
-  field
-    Carrier : Set
-    G : IsMonoid G₀
-    H : IsMonoid H₀
-  module G = IsMonoid G
-  module H = IsMonoid H
-  field
-    ◁ : G actsOnᴸ X
-    ▷ : H actsOnᴸ X

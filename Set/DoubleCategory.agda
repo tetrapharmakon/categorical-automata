@@ -1,4 +1,5 @@
-{-# OPTIONS --allow-unsolved-metas #-}
+{-# OPTIONS --without-K --cubical-compatible #-}
+
 module Set.DoubleCategory where
 
 open import Set.Automata
@@ -45,6 +46,9 @@ record Cell (lv : A → A') (rv : B → B') (lh : Mealy A B) (rh : Mealy A' B') 
     α  : lh.E → rh.E
     com-s : ∀ {x y} → rh.s (lv x , α y) ≡ rv (lh.s (x , y))
     com-d : ∀ {x y} → rh.d (lv x , α y) ≡  α (lh.d (x , y))
+
+infixr 25 _⊙ᵥ_
+infixr 35 _⊙ₕ_
 
 _⊙ᵥ_ : ∀ {lh : Mealy A B} {boh : Mealy A'' B''} {rh : Mealy A' B'}
   → Cell lv' rv' lh boh
@@ -103,29 +107,29 @@ idCell M = record
 unitorᴸ : ∀ (M : Mealy X Y) → Cell id id M (M ⋄ idMealy)
 unitorᴸ M = record
   { α = λ { x → tt , x }
-  ; com-s = {! !}
-  ; com-d = {! !}
+  ; com-s = refl
+  ; com-d = refl
   }
 
 unitorᴿ : ∀ (M : Mealy X Y) → Cell id id (idMealy ⋄ M) M
 unitorᴿ M = record
   { α = λ { (e , _) → e }
-  ; com-s = {! !}
-  ; com-d = {! !}
+  ; com-s = refl
+  ; com-d = refl
   }
 
 unitorᴸ⁻¹ : ∀ (M : Mealy X Y) → Cell id id (M ⋄ idMealy) M
 unitorᴸ⁻¹ M = record
   { α = λ { (_ , e) → e }
-  ; com-s = {! !}
-  ; com-d = {!  !}
+  ; com-s = refl
+  ; com-d = refl
   }
 
 unitorᴿ⁻¹ : ∀ (M : Mealy X Y) → Cell id id M (idMealy ⋄ M)
 unitorᴿ⁻¹ M = record
   { α = λ { x → x , tt }
-  ; com-s = {!  !}
-  ; com-d = {!  !}
+  ; com-s = refl
+  ; com-d = refl
   }
 
 assoc : ∀ (P : Mealy Z A) (N : Mealy Y Z) (M : Mealy X Y) → Cell id id (P ⋄ (N ⋄ M)) ((P ⋄ N) ⋄ M)

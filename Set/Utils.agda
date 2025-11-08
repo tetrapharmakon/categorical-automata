@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K --cubical-compatible #-}
+
 module Set.Utils where
 
 open import Level using (suc)
