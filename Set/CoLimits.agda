@@ -38,6 +38,23 @@ record Tabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
       Cell≡ ξ (subst₂ (λ Q R → Cell Q R idMealy M) (fst-commute₁ ξ) (snd-commute₁ ξ) (idH (universal ξ) ⊙ᵥ τ))
 
 
+coTensor : Tabulator (idMealy {A})
+coTensor {A = A} = record 
+  { tab = A × A 
+  ; p = proj₁ 
+  ; q = proj₂ 
+  ; τ = record 
+    { α = λ { x → tt } 
+    ; com-s = λ { {a , a'} {tt} → {! !} }
+    ; com-d = λ { {a , a'} {tt} → refl }
+    } 
+  ; universal = λ { {f = f} {g = g} ξ → < f , g > } 
+  ; fst-commute₁ = λ { ξ → refl } 
+  ; snd-commute₁ = λ { ξ → refl } 
+  ; commute₂ = record { eq = refl } 
+  }
+
+
 record CoTabulator {X Y} (M : Mealy X Y) : Set (suc zero) where
   private
     module M = Mealy M
@@ -84,24 +101,23 @@ fatto {X = X} {Y = Y} M = let module M = Mealy M in record
 --     se-surj : ∀ {y} → ∃[ x ] (M.s (x , e) ≡ y)
 
 
--- fatto2 : (M : Mealy X Y) → (SOI : SubobjectOfInterest M) → Tabulator M
--- fatto2 {X = X} {Y = Y} M SOI =
---   let module M = Mealy M
---       module SOI = SubobjectOfInterest SOI in
---     record
---       { tab = X × Y
---       ; p = proj₁
---       ; q = proj₂
---       ; τ = record
---         { α = λ { _ → SOI.e }
---         ; com-s = λ { {x , y} → {! proj₂ (SOI.se-surj {y}) !} }
---         ; com-d = λ { {x , y} {tt} → SOI.fix-d }
---         }
---       ; universal = λ { {f = f} {g = g} ξ → < f , g > }
---       ; fst-commute₁ = λ { ξ → refl }
---       ; snd-commute₁ = λ { ξ → refl }
---       ; commute₂ = record { eq = λ { {x} → {! !} } } --impossible
---       }
+fatto2 : (M : Mealy X Y) → (e : Mealy.E M) → Tabulator M
+fatto2 {X = X} {Y = Y} M e =
+ let module M = Mealy M in
+   record
+     { tab = X × Y
+     ; p = proj₁
+     ; q = proj₂
+     ; τ = record
+       { α = λ tt → e
+       ; com-s = λ { {x , y} → {! proj₂ (SOI.se-surj {y}) !} }
+       ; com-d = λ { {x , y} {tt} → {! !} }
+       }
+     ; universal = λ { {f = f} {g = g} ξ → < f , g > }
+     ; fst-commute₁ = λ { ξ → refl }
+     ; snd-commute₁ = λ { ξ → refl }
+     ; commute₂ = record { eq = λ { {x} → {! !} } } --impossible
+     }
 
 record Companion {A B} (f : A → B) : Set (suc zero) where
   field
@@ -146,37 +162,83 @@ f ₒ = record
   ; zag = record { eq = refl }
   }
 
+
 -- I think conjoints do not exist
 --
 --
--- ConjointExperiment : (f : A → B) → (a : A) → Conjoint f
--- ConjointExperiment {A} {B} f a = record
---   { conj = record
---     { E = A × B
---     ; d = λ { (b , (a , b')) → a , f a }
---     ; s = λ { (b , (a , b')) → a }
---     }
---   ; Λ = record
---     { α = λ { tt → a , f a }
---     ; com-s = λ { {x} {tt} → {!  !} }
---     ; com-d = refl
---     }
---   ; Ξ = record
---     { α = λ { x → tt }
---     ; com-s = λ { {b} {(a , b')} → {!  !} } -- b ≡ f a
---     ; com-d = refl
---     }
---   ; zig = record { eq = refl }
---   ; zag = record { eq = {!  !} }
---   }
+--
+record Graph (f : A → B) : Set where 
+  field
+    fst : A 
+    snd : B 
+    fa≡b : f fst ≡ snd
+--
 
-ConjointExperiment2 : (f : A → B) → Conjoint f
-ConjointExperiment2 {A} {B} f = record
-  { conj = {! mealify (P∞ A)  !}
-  ; Λ = {!  !}
-  ; Ξ = {!  !}
-  ; zig = {!  !}
-  ; zag = {!  !}
+embed : (f : A → B) → (Γf : Graph f) → A × B
+embed f Γf = Γf.fst , Γf.snd
+  where module Γf = Graph Γf
+
+granchiollo : (f : A → B) → Tabulator (Companion.comp (f ₒ))
+granchiollo {A = A} {B = B} f = record 
+  { tab = Graph f -- A × B 
+    ; p = proj₁ ∘ embed f -- proj₁
+    ; q = proj₂ ∘ embed f -- proj₁
+    ; τ = record 
+      { α = λ { x → x } 
+      ; com-s = λ { {Γf} → let module Γf = Graph Γf in Γf.fa≡b }
+      ; com-d = λ { {t} → refl }
+      } 
+    ; universal = λ { ξ x → {! !} } -- a certain pair (a , fa); but for which a? 
+    ; fst-commute₁ = λ { ξ → {! !} } 
+    ; snd-commute₁ = λ { ξ → {! !} } 
+    ; commute₂ = record { eq = λ { {tt} → {! !} } }
+  } 
+ConjointExperiment : (f : A → B) → (a : A) → Conjoint f
+ConjointExperiment {A} {B} f a = record
+ { conj = record
+   { E = A × B
+   ; d = λ { (b , (a , b')) → a , f a }
+   ; s = λ { (b , (a , b')) → a }
+
+   }
+ ; Λ = record
+   { α = λ { tt → a , f a }
+   ; com-s = λ { {x} {tt} → {!  !} }
+   ; com-d = refl
+   }
+ ; Ξ = record
+   { α = λ { x → tt }
+   ; com-s = λ { {b} {(a , b')} → {!  !} } -- b ≡ f a
+   ; com-d = refl
+   }
+ ; zig = record { eq = refl }
+ ; zag = record { eq = {!  !} }
+ }
+
+ConjointExperiment2 : 
+  (f : A → B) 
+  (E : Set) 
+  (e₀ : E) 
+  (d : B × E → E) 
+  (s : B × E → A) → Conjoint f
+ConjointExperiment2 {A} {B} f E e₀ d s = record
+  { conj = record 
+    { E = E
+    ; d = d -- d : B × E → E
+    ; s = s -- s : B × E → A
+    }
+  ; Λ = record 
+    { α = λ { tt → e₀ } -- E pointed
+    ; com-s = λ { {a} {tt} → {! !} } -- s (f a , e₀) ≡ a
+    ; com-d = λ { {a} {tt} → {! !} } -- d (f a , e₀) ≡ e₀
+    }
+  ; Ξ = record 
+    { α = λ { x → tt } 
+    ; com-s = λ { {b} {e} → {! !} } -- b ≡ f (s (b , e))
+    ; com-d = λ { {b} {e} → refl }
+    }
+  ; zig = record { eq = refl }
+  ; zag = record { eq = {! !} }
   }
 -- initials and terminals
 

@@ -5,6 +5,7 @@ open import Set.Automata
 open import Set.LimitAutomata
 open import Set.DoubleCategory
 open import Set.Functors
+open import Set.CoLimits
 open import Level
 open import Function
 
@@ -131,7 +132,8 @@ module _ {R : Mealy A B} {G : Mealy A X} {F : Mealy B X} where
   fleshoutRift ε = record 
     { ε = record 
       { α = ε 
---Goal: R.E × F.E → G.E
+--
+-- Goal: R.E × F.E → G.E
       ; com-s = λ { {a} {r , f} → {! !} }
 --Goal: G.s (a , ε (r , f)) ≡ F.s (R.s (a , r) , f)
       ; com-d = λ { {a} {r , f} → {! !} } }
@@ -139,3 +141,43 @@ module _ {R : Mealy A B} {G : Mealy A X} {F : Mealy B X} where
     ; universal = {! !} 
     ; commute = {! !} 
     ; unique = {! !} }
+
+
+module _ {f : A → B} {g : A → C} {r : B → C} where
+  open Companion
+  
+  conjointRan : (comp (r ₒ)) isRan comp (g ₒ) along comp (f ₒ)
+  conjointRan = record 
+    { ρ = record 
+      { α = λ { x → tt } 
+      ; com-s = λ { {a} {tt , tt} → {! !} } -- g a ≡ r (f a)
+      ; com-d = λ { {a} {tt , tt} → refl }
+      } 
+    ; universal = λ { H ξ → record 
+      { α = λ { x → tt } 
+      ; com-s = λ { {b} {y} → {! !} } -- r b ≡ Mealy.s H (b , y)
+      ; com-d = λ { {b} {y} → refl }
+      } } 
+    ; commute = λ { H ξ → record { eq = refl } }
+    ; unique = λ { H ξ c pc → record { eq = refl } } 
+    }
+
+
+module _ {f : A → B} {g : C → B} {r : C → A} where
+  open Companion
+
+  conjointRift : (comp (r ₒ)) isRift comp (g ₒ) along comp (f ₒ)
+  conjointRift = record 
+    { ε = record 
+      { α = λ { x → tt } 
+      ; com-s = λ { {c} {tt , tt} → {! !} }
+      ; com-d = λ { {c} {tt , tt} → refl }
+      } 
+    ; universal = λ { H ξ → record 
+      { α = λ { x → tt } 
+      ; com-s = {! !} 
+      ; com-d = refl } 
+      } 
+    ; commute = λ { H ξ → record { eq = refl } } 
+    ; unique = λ { H ξ c pc → record { eq = refl } } 
+    }
