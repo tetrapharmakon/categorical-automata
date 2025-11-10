@@ -4,6 +4,8 @@ open import Set.Automata
 open import Data.Sum
 open import Data.Product
 
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+
 record MR (I : Set) (O : Set) : Set₁ where
   eta-equality
   field
@@ -23,3 +25,10 @@ private
   ; s = λ { (i , y) → y i } 
   } where module M = MR M
 
+pollo : (y : MR B C) → (x : MR A B) → Mealy.d (⟦ y ⟧ ⋄ ⟦ x ⟧) 
+  ≡ λ { (a , (u , t)) → (λ i' → ϕ x (u a) i') , λ i' → ϕ y (t (Mealy.s ⟦ x ⟧ (a , u))) i' }
+pollo y x = refl
+
+papero : (y : MR B C) → (x : MR A B) → Mealy.s (⟦ y ⟧ ⋄ ⟦ x ⟧) 
+  ≡ λ { (a , (u , t)) → t (Mealy.s ⟦ x ⟧ (a , u)) }
+papero y x = refl
