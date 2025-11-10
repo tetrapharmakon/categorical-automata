@@ -6,6 +6,10 @@ open import Data.Product
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
+private
+  variable
+    A B C D I O : Set
+
 record MR (I : Set) (O : Set) : Set₁ where
   eta-equality
   field
@@ -14,9 +18,15 @@ record MR (I : Set) (O : Set) : Set₁ where
 
 open MR
 
-private
-  variable
-    A B C I O : Set
+record MR⇒ (X : MR A B) (Y : MR C D) : Set₁ where 
+  eta-equality
+  module X = MR X 
+  module Y = MR Y
+  field
+    u : A → C 
+    v : B → D 
+    comp-f : ∀ a → Y.f (u a) ≡ v (X.f a)
+    comp-ϕ : ∀ b → ∀ a → v (X.ϕ b a) ≡ Y.ϕ (v b) (u a)
 
 ⟦_⟧ : MR I O → Mealy I O 
 ⟦_⟧ {I} {O} M = record 
