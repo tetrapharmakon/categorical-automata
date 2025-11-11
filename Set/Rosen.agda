@@ -56,3 +56,6 @@ pollo y x = refl
 papero : (y : MR B C) → (x : MR A B) → Mealy.s (⟦ y ⟧ ⋄ ⟦ x ⟧) 
   ≡ λ { (a , (u , t)) → t (Mealy.s ⟦ x ⟧ (a , u)) }
 papero y x = refl
+
+--cecck-morphisms : {X : MR A B} {Y : MR C D} (h : MR⇒ X Y) → Mealy⇒ ⟦ X ⟧ ⟦ Y ⟧
+--cecck-morphisms = ?
