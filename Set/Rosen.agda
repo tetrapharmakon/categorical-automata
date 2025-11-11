@@ -3,12 +3,13 @@ module Set.Rosen where
 open import Set.Automata
 open import Data.Sum
 open import Data.Product
+open import Function using (_∘_)
 
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong₂; cong; trans; sym)
 
 private
   variable
-    A B C D I O : Set
+    A B C D E F I O : Set
 
 record MR (I : Set) (O : Set) : Set₁ where
   eta-equality
@@ -28,11 +29,24 @@ record MR⇒ (X : MR A B) (Y : MR C D) : Set₁ where
     comp-f : ∀ a → Y.f (u a) ≡ v (X.f a)
     comp-ϕ : ∀ b → ∀ a → v (X.ϕ b a) ≡ Y.ϕ (v b) (u a)
 
+jop : {X : MR A B} {Y : MR C D} {Z : MR E F} (h : MR⇒ X Y) (k : MR⇒ Y Z) → MR⇒ X Z
+jop {X = X} {Y = Y} {Z = Z} h k = 
+  let module X = MR X
+      module Y = MR Y
+      module Z = MR Z 
+      module h = MR⇒ h 
+      module k = MR⇒ k in record 
+    { u = k.u ∘ h.u 
+    ; v = k.v ∘ h.v 
+    ; comp-f = λ { a → trans (k.comp-f (h.u a)) (cong k.v (h.comp-f a)) } 
+    ; comp-ϕ = λ { b a → trans (cong k.v (h.comp-ϕ b a)) (k.comp-ϕ (h.v b) (h.u a)) } 
+    } 
+
 ⟦_⟧ : MR I O → Mealy I O 
 ⟦_⟧ {I} {O} M = record 
   { E = I → O 
-  ; d = λ { (i , y) i' → M.ϕ (y i) i' } 
-  ; s = λ { (i , y) → y i } 
+  ; d = λ { (i , f) i' → M.ϕ (f i) i' } 
+  ; s = λ { (i , f) → f i } 
   } where module M = MR M
 
 pollo : (y : MR B C) → (x : MR A B) → Mealy.d (⟦ y ⟧ ⋄ ⟦ x ⟧) 
