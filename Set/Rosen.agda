@@ -59,3 +59,30 @@ papero y x = refl
 
 --cecck-morphisms : {X : MR A B} {Y : MR C D} (h : MR⇒ X Y) → Mealy⇒ ⟦ X ⟧ ⟦ Y ⟧
 --cecck-morphisms = ?
+--
+--
+record StortoMealy (I : Set) (O : Set) : Set₁ where
+  eta-equality
+  field
+    S : Set
+    b : O → S
+    s : I × S → O
+
+
+μ : (x : StortoMealy A B) → Mealy A B
+μ x = record 
+  { E = x.S 
+  ; d = x.b ∘ x.s 
+  ; s = x.s 
+  } where module x = StortoMealy x
+
+
+dcompo-test : (x : StortoMealy A B) (y : StortoMealy B C) → Mealy.d ((μ y) ⋄ (μ x)) 
+  ≡ λ { (a , (s , s')) → Mealy.d (μ x) (a , s) , Mealy.d (μ y) (Mealy.s (μ x) (a , s) , s') }
+dcompo-test x y = refl
+
+
+scompo-test : (x : StortoMealy A B) (y : StortoMealy B C) → Mealy.s ((μ y) ⋄ (μ x)) 
+  ≡ λ { (a , (s , s')) → StortoMealy.s y (Mealy.s (μ x) (a , s) , s') }
+scompo-test x y = refl
+
