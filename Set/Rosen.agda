@@ -19,6 +19,13 @@ record MR (I : Set) (O : Set) : Set₁ where
 
 open MR
 
+record MR2 (I : Set) (O : Set) : Set₁ where
+  eta-equality
+  field
+    f : I → O
+    ϕ1 : O → (I → O)
+    ϕ2 : (I → O) → (O → (I → O))
+
 record MR⇒ (X : MR A B) (Y : MR C D) : Set₁ where 
   eta-equality
   module X = MR X 
@@ -29,8 +36,8 @@ record MR⇒ (X : MR A B) (Y : MR C D) : Set₁ where
     comp-f : ∀ a → Y.f (u a) ≡ v (X.f a)
     comp-ϕ : ∀ b → ∀ a → v (X.ϕ b a) ≡ Y.ϕ (v b) (u a)
 
-jop : {X : MR A B} {Y : MR C D} {Z : MR E F} (h : MR⇒ X Y) (k : MR⇒ Y Z) → MR⇒ X Z
-jop {X = X} {Y = Y} {Z = Z} h k = 
+MRcompose : {X : MR A B} {Y : MR C D} {Z : MR E F} (h : MR⇒ X Y) (k : MR⇒ Y Z) → MR⇒ X Z
+MRcompose {X = X} {Y = Y} {Z = Z} h k = 
   let module X = MR X
       module Y = MR Y
       module Z = MR Z 
@@ -49,7 +56,12 @@ jop {X = X} {Y = Y} {Z = Z} h k =
   ; s = λ { (i , f) → f i } 
   } where module M = MR M
 
-
+⟦_⟧2 : MR2 I O → Mealy I (O × (O → I → O)) 
+⟦_⟧2 {I} {O} M = record 
+  { E = (I → O) × (O → I → O)
+  ; d = λ { (i , (u , T)) → {!   !} , {!   !} }
+  ; s = λ { (i , (u , T)) → u i , T }
+  } where module M = MR2 M
 
 pollo : (y : MR B C) → (x : MR A B) → Mealy.d (⟦ y ⟧ ⋄ ⟦ x ⟧) 
   ≡ λ { (a , (u , t)) → (ϕ x (u a)) , (ϕ y (t (u a))) }
@@ -89,4 +101,3 @@ dcompo-test x y = refl
 scompo-test : (x : StortoMealy A B) (y : StortoMealy B C) → Mealy.s ((μ y) ⋄ (μ x)) 
   ≡ λ { (a , (s , s')) → σ y (σ x (a , s) , s') }
 scompo-test x y = refl
-
