@@ -49,12 +49,14 @@ jop {X = X} {Y = Y} {Z = Z} h k =
   ; s = λ { (i , f) → f i } 
   } where module M = MR M
 
+
+
 pollo : (y : MR B C) → (x : MR A B) → Mealy.d (⟦ y ⟧ ⋄ ⟦ x ⟧) 
-  ≡ λ { (a , (u , t)) → (λ i' → ϕ x (u a) i') , λ i' → ϕ y (t (Mealy.s ⟦ x ⟧ (a , u))) i' }
+  ≡ λ { (a , (u , t)) → (ϕ x (u a)) , (ϕ y (t (u a))) }
 pollo y x = refl
 
 papero : (y : MR B C) → (x : MR A B) → Mealy.s (⟦ y ⟧ ⋄ ⟦ x ⟧) 
-  ≡ λ { (a , (u , t)) → t (Mealy.s ⟦ x ⟧ (a , u)) }
+  ≡ λ { (a , (u , t)) → t (u a) }
 papero y x = refl
 
 --cecck-morphisms : {X : MR A B} {Y : MR C D} (h : MR⇒ X Y) → Mealy⇒ ⟦ X ⟧ ⟦ Y ⟧
@@ -66,23 +68,25 @@ record StortoMealy (I : Set) (O : Set) : Set₁ where
   field
     S : Set
     b : O → S
-    s : I × S → O
+    σ : I × S → O
 
+open StortoMealy
 
 μ : (x : StortoMealy A B) → Mealy A B
 μ x = record 
   { E = x.S 
-  ; d = x.b ∘ x.s 
-  ; s = x.s 
+  ; d = x.b ∘ x.σ 
+  ; s = x.σ 
   } where module x = StortoMealy x
 
 
 dcompo-test : (x : StortoMealy A B) (y : StortoMealy B C) → Mealy.d ((μ y) ⋄ (μ x)) 
-  ≡ λ { (a , (s , s')) → Mealy.d (μ x) (a , s) , Mealy.d (μ y) (Mealy.s (μ x) (a , s) , s') }
+  ≡ λ { (a , (s , s')) → b x (σ x (a , s)) , b y (σ y (σ x (a , s) , s')) }
 dcompo-test x y = refl
+  where module x = StortoMealy x
 
 
 scompo-test : (x : StortoMealy A B) (y : StortoMealy B C) → Mealy.s ((μ y) ⋄ (μ x)) 
-  ≡ λ { (a , (s , s')) → StortoMealy.s y (Mealy.s (μ x) (a , s) , s') }
+  ≡ λ { (a , (s , s')) → σ y (σ x (a , s) , s') }
 scompo-test x y = refl
 
