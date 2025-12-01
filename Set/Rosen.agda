@@ -60,12 +60,12 @@ open MR
 --   ; comp-ϕ = λ { b a → refl } 
 --   }
 
--- ⟦_⟧ : MR I O → Mealy I O 
--- ⟦_⟧ {I} {O} M = record 
---   { E = I → O 
---   ; d = λ { (i , f) i' → M.ϕ (f i) i' } 
---   ; s = λ { (i , f) → f i } 
---   } where module M = MR M
+⟦_⟧ : MR I O → Mealy I O 
+⟦_⟧ {I} {O} M = record 
+ { E = I → O 
+ ; d = λ { (i , f) i' → M.ϕ (f i) i' } 
+ ; s = λ { (i , f) → f i } 
+ } where module M = MR M
 
 -- ⟦_⟧' : MR2 I O → Mealy I (O × (O → I → O)) 
 -- ⟦_⟧' {I} {O} M = record 
@@ -187,6 +187,14 @@ mr1 = record
   { f = id 
   ; ϕ = λ { x _ → x } 
   }
+
+Mealy-di-mr1 : {A : Set} → ⟦ mr1 ⟧ ≡ record 
+  { E = A → A 
+  ; d = λ { (a , f) a' → f a } 
+  ; s = λ { (a , f) → f a } 
+  }
+Mealy-di-mr1 = refl
+
 -- comult ? Serve una classe di equivalenza in ∫^X MR(A,X) × MR(X,B);
 -- può essere nel sommando ad X=A, oppure X=B e poi dovranno (forse)
 -- essere uguali nel quoziente della coend
@@ -236,3 +244,27 @@ dat {X} {Y} f = Data.Product.map₂ (MRfunctor f id)
 
 prova : {X Y : Set} → (f : X → Y) → (m : MR A B) → Set₁
 prova f m = let l = dis f ({!   !} , {!   !}) in {!   !}
+
+module _ (x : MR A B) where
+  contuzzo : (⟦ mr1 ⟧ ⋄ ⟦ x ⟧) ≡ record 
+    { E = (A → B) × (B → B)
+    ; d = λ { (a , e , e') → (λ { a' → ϕ x (e a) a' }) , λ { b → e' (e a) } }
+    ; s = λ { (a , e , e') → e' (e a) }
+    }
+  contuzzo = refl
+
+
+  verifica : Mealy⇒ (⟦ x ⟧) (⟦ mr1 ⟧ ⋄ ⟦ x ⟧)
+  verifica = record 
+    { hom = λ { t → t , id } 
+    ; d-eq = λ { (a , t) → cong₂ _,_ refl {! !} } -- unfillable!
+    ; s-eq = λ { (a , t) → {! !} } 
+    }
+
+  coverifica : Mealy⇒ (⟦ mr1 ⟧ ⋄ ⟦ x ⟧) (⟦ x ⟧) 
+  coverifica = record 
+    { hom = λ { (f , u) a → f a } 
+    ; d-eq = λ { (a , f , u) → refl } 
+    ; s-eq = λ { (a , f , u) → {! !} } 
+    }
+
