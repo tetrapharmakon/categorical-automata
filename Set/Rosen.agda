@@ -22,106 +22,106 @@ record MR (A B : Set) : Set₁ where
 
 open MR
 
-record MR2 (A B : Set) : Set₁ where
-  eta-equality
-  field
-    f : A → B
-    ϕ1 : B → (A → B)
-    ϕ2 : (A → B) → (B → (A → B))
+-- record MR2 (A B : Set) : Set₁ where
+--   eta-equality
+--   field
+--     f : A → B
+--     ϕ1 : B → (A → B)
+--     ϕ2 : (A → B) → (B → (A → B))
 
-record MR⇒ (X : MR A B) (Y : MR C D) : Set₁ where 
-  eta-equality
-  module X = MR X 
-  module Y = MR Y
-  field
-    u : A → C 
-    v : B → D 
-    comp-f : ∀ a → Y.f (u a) ≡ v (X.f a)
-    comp-ϕ : ∀ b → ∀ a → v (X.ϕ b a) ≡ Y.ϕ (v b) (u a)
+-- record MR⇒ (X : MR A B) (Y : MR C D) : Set₁ where 
+--   eta-equality
+--   module X = MR X 
+--   module Y = MR Y
+--   field
+--     u : A → C 
+--     v : B → D 
+--     comp-f : ∀ a → Y.f (u a) ≡ v (X.f a)
+--     comp-ϕ : ∀ b → ∀ a → v (X.ϕ b a) ≡ Y.ϕ (v b) (u a)
 
-_＠_ : {X : MR A B} {Y : MR C D} {Z : MR E F} (h : MR⇒ X Y) (k : MR⇒ Y Z) → MR⇒ X Z
-_＠_ {X = X} {Y = Y} {Z = Z} h k = 
-  let module X = MR X
-      module Y = MR Y
-      module Z = MR Z 
-      module h = MR⇒ h 
-      module k = MR⇒ k in record 
-    { u = k.u ∘ h.u 
-    ; v = k.v ∘ h.v 
-    ; comp-f = λ { a → trans (k.comp-f (h.u a)) (cong k.v (h.comp-f a)) } 
-    ; comp-ϕ = λ { b a → trans (cong k.v (h.comp-ϕ b a)) (k.comp-ϕ (h.v b) (h.u a)) } 
-    } 
+-- _＠_ : {X : MR A B} {Y : MR C D} {Z : MR E F} (h : MR⇒ X Y) (k : MR⇒ Y Z) → MR⇒ X Z
+-- _＠_ {X = X} {Y = Y} {Z = Z} h k = 
+--   let module X = MR X
+--       module Y = MR Y
+--       module Z = MR Z 
+--       module h = MR⇒ h 
+--       module k = MR⇒ k in record 
+--     { u = k.u ∘ h.u 
+--     ; v = k.v ∘ h.v 
+--     ; comp-f = λ { a → trans (k.comp-f (h.u a)) (cong k.v (h.comp-f a)) } 
+--     ; comp-ϕ = λ { b a → trans (cong k.v (h.comp-ϕ b a)) (k.comp-ϕ (h.v b) (h.u a)) } 
+--     } 
 
-𝟙 : {X : MR A B} → MR⇒ X X
-𝟙 = record 
-  { u = Function.id 
-  ; v = Function.id 
-  ; comp-f = λ { a → refl } 
-  ; comp-ϕ = λ { b a → refl } 
-  }
+-- 𝟙 : {X : MR A B} → MR⇒ X X
+-- 𝟙 = record 
+--   { u = Function.id 
+--   ; v = Function.id 
+--   ; comp-f = λ { a → refl } 
+--   ; comp-ϕ = λ { b a → refl } 
+--   }
 
-⟦_⟧ : MR I O → Mealy I O 
-⟦_⟧ {I} {O} M = record 
-  { E = I → O 
-  ; d = λ { (i , f) i' → M.ϕ (f i) i' } 
-  ; s = λ { (i , f) → f i } 
-  } where module M = MR M
+-- ⟦_⟧ : MR I O → Mealy I O 
+-- ⟦_⟧ {I} {O} M = record 
+--   { E = I → O 
+--   ; d = λ { (i , f) i' → M.ϕ (f i) i' } 
+--   ; s = λ { (i , f) → f i } 
+--   } where module M = MR M
 
-⟦_⟧' : MR2 I O → Mealy I (O × (O → I → O)) 
-⟦_⟧' {I} {O} M = record 
-  { E = (I → O) × (O → I → O)
-  ; d = λ { (i , (u , T)) → (λ { j → M.ϕ2 (M.ϕ1 (T (u i) j)) (u i) j }) , T }
-  ; s = λ { (i , (u , T)) → u i , T }
-  } where module M = MR2 M
+-- ⟦_⟧' : MR2 I O → Mealy I (O × (O → I → O)) 
+-- ⟦_⟧' {I} {O} M = record 
+--   { E = (I → O) × (O → I → O)
+--   ; d = λ { (i , (u , T)) → (λ { j → M.ϕ2 (M.ϕ1 (T (u i) j)) (u i) j }) , T }
+--   ; s = λ { (i , (u , T)) → u i , T }
+--   } where module M = MR2 M
 
 
-⟦_⟧2 : MR2 I O → Mealy I O
-⟦_⟧2 {I} {O} M = record 
-  { E = (I → O) × (O → I → O)
-  ; d = λ { (i , (u , T)) → M.ϕ2 (M.ϕ1 (u i)) (u i) , T } 
-  ; s = λ { (i , (u , T)) → u i } 
-  } where module M = MR2 M
+-- ⟦_⟧2 : MR2 I O → Mealy I O
+-- ⟦_⟧2 {I} {O} M = record 
+--   { E = (I → O) × (O → I → O)
+--   ; d = λ { (i , (u , T)) → M.ϕ2 (M.ϕ1 (u i)) (u i) , T } 
+--   ; s = λ { (i , (u , T)) → u i } 
+--   } where module M = MR2 M
 
-fagiano : (y : MR B C) → (x : MR A B) → Mealy.E (⟦ y ⟧ ⋄ ⟦ x ⟧) 
-  ≡ Σ (A → B) (λ x₁ → (B → C))
-fagiano y x = refl
+-- fagiano : (y : MR B C) → (x : MR A B) → Mealy.E (⟦ y ⟧ ⋄ ⟦ x ⟧) 
+--   ≡ Σ (A → B) (λ x₁ → (B → C))
+-- fagiano y x = refl
 
-pollo : (y : MR B C) → (x : MR A B) → Mealy.d (⟦ y ⟧ ⋄ ⟦ x ⟧) 
-  ≡ λ { (a , (u , t)) → (ϕ x (u a)) , (ϕ y (t (u a))) }
-pollo y x = refl
+-- pollo : (y : MR B C) → (x : MR A B) → Mealy.d (⟦ y ⟧ ⋄ ⟦ x ⟧) 
+--   ≡ λ { (a , (u , t)) → (ϕ x (u a)) , (ϕ y (t (u a))) }
+-- pollo y x = refl
 
-papero : (y : MR B C) → (x : MR A B) → Mealy.s (⟦ y ⟧ ⋄ ⟦ x ⟧) 
-  ≡ λ { (a , (u , t)) → t (u a) }
-papero y x = refl
+-- papero : (y : MR B C) → (x : MR A B) → Mealy.s (⟦ y ⟧ ⋄ ⟦ x ⟧) 
+--   ≡ λ { (a , (u , t)) → t (u a) }
+-- papero y x = refl
 
-pollo2 : (y : MR2 B C) → (x : MR2 A B) → Mealy.d (⟦ y ⟧2 ⋄ ⟦ x ⟧2) 
-  ≡ λ { (a , ((u , K) , (v , T))) → Mealy.d ⟦ x ⟧2 (a , u , K) , Mealy.d ⟦ y ⟧2 (u a , v , T) }
-pollo2 y x = refl
+-- pollo2 : (y : MR2 B C) → (x : MR2 A B) → Mealy.d (⟦ y ⟧2 ⋄ ⟦ x ⟧2) 
+--   ≡ λ { (a , ((u , K) , (v , T))) → Mealy.d ⟦ x ⟧2 (a , u , K) , Mealy.d ⟦ y ⟧2 (u a , v , T) }
+-- pollo2 y x = refl
 
-papero2 : (y : MR2 B C) → (x : MR2 A B) → Mealy.s (⟦ y ⟧2 ⋄ ⟦ x ⟧2) 
-  ≡ λ { (a , ((u , K) , (v , T))) → v (u a) }
-papero2 y x = refl
+-- papero2 : (y : MR2 B C) → (x : MR2 A B) → Mealy.s (⟦ y ⟧2 ⋄ ⟦ x ⟧2) 
+--   ≡ λ { (a , ((u , K) , (v , T))) → v (u a) }
+-- papero2 y x = refl
 
 
 --cecck-morphisms : {X : MR A B} {Y : MR C D} (h : MR⇒ X Y) → Mealy⇒ ⟦ X ⟧ ⟦ Y ⟧
 --cecck-morphisms = ?
 --
 --
-record StortoMealy (I : Set) (O : Set) : Set₁ where
-  eta-equality
-  field
-    S : Set
-    b : O → S
-    σ : I × S → O
+-- record StortoMealy (I : Set) (O : Set) : Set₁ where
+--   eta-equality
+--   field
+--     S : Set
+--     b : O → S
+--     σ : I × S → O
 
-open StortoMealy
+-- open StortoMealy
 
-μ : (x : StortoMealy A B) → Mealy A B
-μ x = record 
-  { E = x.S 
-  ; d = x.b ∘ x.σ 
-  ; s = x.σ 
-  } where module x = StortoMealy x
+-- μ : (x : StortoMealy A B) → Mealy A B
+-- μ x = record 
+--   { E = x.S 
+--   ; d = x.b ∘ x.σ 
+--   ; s = x.σ 
+--   } where module x = StortoMealy x
 
 {-
 dcompo-test : (x : StortoMealy A B) (y : StortoMealy B C) → Mealy.d ((μ y) ⋄ (μ x)) 
@@ -185,17 +185,17 @@ MRfunctoriality-2 = refl
 mr1 : MR A A 
 mr1 = record
   { f = id 
-  ; ϕ = λ { x x₁ → x } 
+  ; ϕ = λ { x _ → x } 
   }
 -- comult ? Serve una classe di equivalenza in ∫^X MR(A,X) × MR(X,B);
 -- può essere nel sommando ad X=A, oppure X=B e poi dovranno (forse)
 -- essere uguali nel quoziente della coend
-δA : {X : Set} → MR A B → MR A A × MR A B 
-δA {X = X} M = mr1 , M
+δA : MR A B → MR A A × MR A B 
+δA M = mr1 , M
 
 
-δB : {X : Set} → MR A B → MR A B × MR B B 
-δB {X = X} M = M , mr1
+δB : MR A B → MR A B × MR B B 
+δB M = M , mr1
 
 -- sono uguali?
 -- sì
@@ -215,3 +215,24 @@ fattoide2' M X t a = refl
 
 -- counità + comult interagiscono ovviamente (posso scegliere ogni volta la rappresentazione per delta che non viene toccata da ε)
 -- coassoc? Difficile da agdare, facile a mano.
+
+
+record Dgnz : Set₁ where
+  field
+    diel : MR A A 
+    ε-comm : ε {A} diel ≡ id
+    δA-comm : proj₂ (δA {A} diel) ≡ mr1
+    δB-comm : proj₁ (δB {B} diel) ≡ mr1
+    -- sono ridondanti
+
+open Dgnz
+
+-- eqrel della coend identifica costanti? Prolly la parte Phi è trivialized nel diagonizz
+dis : {X Y : Set} → (f : X → Y) → (MR A X) × (MR X B) → (MR A Y) × (MR X B)
+dis {X} {Y} f = Data.Product.map₁ (MRfunctor id f)
+
+dat : {X Y : Set} → (f : X → Y) → (MR A Y) × (MR Y B) → (MR A Y) × (MR X B)
+dat {X} {Y} f = Data.Product.map₂ (MRfunctor f id)
+
+prova : {X Y : Set} → (f : X → Y) → (m : MR A B) → Set₁
+prova f m = let l = dis f ({!   !} , {!   !}) in {!   !}
