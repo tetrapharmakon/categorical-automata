@@ -28,23 +28,23 @@ record MR1 (A B : Set) : Set₁ where
 
 open MR1
 
-d0 : MR1 A B → MR2 A B
-d0 mr1 = record 
+fc : MR1 A B → MR2 A B
+fc mr1 = record 
   { f = arr mr1
   ; ϕ = λ x a → x 
   } 
 
-d1 : MR1 A B → MR2 A B
-d1 mr1 = record 
+ff : MR1 A B → MR2 A B
+ff mr1 = record 
   { f = arr mr1
   ; ϕ = λ x → arr mr1
   } 
 
-s1 : MR2 A B → MR1 A B
-s1 x = record { arr = f x }
+l2 : MR2 A B → MR1 A B
+l2 x = record { arr = f x }
 
-s2 : MR2 A B → MR1 A (A → B)
-s2 x = record { arr = λ a → ϕ∘f x a }
+r2 : MR2 A B → MR1 A (A → B)
+r2 x = record { arr = λ a → ϕ∘f x a }
 
 k : MR2 A B → MR1 A B
 k mr2 = record { arr = λ x → mr2.ϕ∘f x x }
@@ -54,14 +54,19 @@ i : {A : Set} → MR1 A A
 i {A} = record { arr = id }
 
 -- simplicial identities
-k∘d1≡1 : ∀ x → arr ((k ∘ d1) x) ≡ arr x
-k∘d1≡1 t = refl
+fc∘i≡ff∘i : ∀ {x : A} → (fc ∘ i) x ≡ (ff ∘ i) x
+fc∘i≡ff∘i t = ?
 
-k∘d0≡1 : ∀ x → arr ((k ∘ d0) x) ≡ arr x
-k∘d0≡1 t = refl
+l2∘ff≡fc∘l2 : ∀ x → arr ((k ∘ fc) x) ≡ arr x
+l2∘ff≡fc∘l2 t = refl
 
-d0∘i : ∀ (x : Set) p q → ϕ (d0 (i {x})) p q ≡ p
-d0∘i x p q = refl
+l2∘fc≡1 : ∀ (x : Set) p q → ϕ (fc (i {x})) p q ≡ p
+l2∘fc≡1 x p q = refl
 
-d1∘i : ∀ (x : Set) p q → ϕ (d1 (i {x})) p q ≡ q
-d1∘i x p q = refl
+k∘ff≡1 : ∀ (x : Set) p q → ϕ (ff (i {x})) p q ≡ q
+k∘ff≡1 x p q = refl
+
+-- r2∘fc≡fc∘k
+-- r2∘fc≡fc∘k
+-- 
+-- r2∘ff≡1
