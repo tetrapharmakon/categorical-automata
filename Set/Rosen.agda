@@ -1,8 +1,10 @@
 module Set.Rosen where
 
 open import Set.Automata
+open import Set.Limits
 open import Data.Sum
 open import Data.Product
+open import Data.Unit using (⊤; tt)
 open import Function using (_∘_; id)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong₂; cong; trans; sym)
@@ -29,36 +31,50 @@ open MR
 --     ϕ1 : B → (A → B)
 --     ϕ2 : (A → B) → (B → (A → B))
 
--- record MR⇒ (X : MR A B) (Y : MR C D) : Set₁ where 
---   eta-equality
---   module X = MR X 
---   module Y = MR Y
---   field
---     u : A → C 
---     v : B → D 
---     comp-f : ∀ a → Y.f (u a) ≡ v (X.f a)
---     comp-ϕ : ∀ b → ∀ a → v (X.ϕ b a) ≡ Y.ϕ (v b) (u a)
+-- mor nel tabulator?
+record MR⇒ (X : MR A B) (Y : MR C D) : Set₁ where 
+ eta-equality
+ module X = MR X 
+ module Y = MR Y
+ field
+   u : A → C 
+   v : B → D 
+   comp-f : ∀ a → Y.f (u a) ≡ v (X.f a)
+   comp-ϕ : ∀ b → ∀ a → v (X.ϕ b a) ≡ Y.ϕ (v b) (u a)
 
--- _＠_ : {X : MR A B} {Y : MR C D} {Z : MR E F} (h : MR⇒ X Y) (k : MR⇒ Y Z) → MR⇒ X Z
--- _＠_ {X = X} {Y = Y} {Z = Z} h k = 
---   let module X = MR X
---       module Y = MR Y
---       module Z = MR Z 
---       module h = MR⇒ h 
---       module k = MR⇒ k in record 
---     { u = k.u ∘ h.u 
---     ; v = k.v ∘ h.v 
---     ; comp-f = λ { a → trans (k.comp-f (h.u a)) (cong k.v (h.comp-f a)) } 
---     ; comp-ϕ = λ { b a → trans (cong k.v (h.comp-ϕ b a)) (k.comp-ϕ (h.v b) (h.u a)) } 
---     } 
+-- questo è forse il tabulator di MR(-,-)
+-- e questa la composizione
+_＠_ : {X : MR A B} {Y : MR C D} {Z : MR E F} (h : MR⇒ X Y) (k : MR⇒ Y Z) → MR⇒ X Z
+_＠_ {X = X} {Y = Y} {Z = Z} h k = 
+ let module X = MR X
+     module Y = MR Y
+     module Z = MR Z 
+     module h = MR⇒ h 
+     module k = MR⇒ k in record 
+   { u = k.u ∘ h.u 
+   ; v = k.v ∘ h.v 
+   ; comp-f = λ { a → trans (k.comp-f (h.u a)) (cong k.v (h.comp-f a)) } 
+   ; comp-ϕ = λ { b a → trans (cong k.v (h.comp-ϕ b a)) (k.comp-ϕ (h.v b) (h.u a)) } 
+   } 
 
--- 𝟙 : {X : MR A B} → MR⇒ X X
--- 𝟙 = record 
---   { u = Function.id 
---   ; v = Function.id 
---   ; comp-f = λ { a → refl } 
---   ; comp-ϕ = λ { b a → refl } 
---   }
+＠assoc : {X : MR A B} {Y : MR C D} {Z : MR E F} {W : MR I O} (h : MR⇒ X Y) (k : MR⇒ Y Z) (u : MR⇒ Z W) → 
+  (MR⇒.u ((h ＠ k) ＠ u)  ≡ MR⇒.u (h ＠ (k ＠ u))) × (MR⇒.v ((h ＠ k) ＠ u)  ≡ MR⇒.v (h ＠ (k ＠ u)))
+＠assoc h k u = refl , refl
+
+
+
+𝟙 : {X : MR A B} → MR⇒ X X
+𝟙 = record 
+ { u = Function.id 
+ ; v = Function.id 
+ ; comp-f = λ { a → refl } 
+ ; comp-ϕ = λ { b a → refl } 
+ }
+
+unitalita : {X : MR A B} {Y : MR C D} → (h : MR⇒ X Y) → 
+  (MR⇒.u (h ＠ (𝟙 {_})) ≡ MR⇒.u h) × (MR⇒.v (h ＠ (𝟙 {_})) ≡ MR⇒.v h)
+unitalita h = refl , refl
+
 
 ⟦_⟧ : MR I O → Mealy I O 
 ⟦_⟧ {I} {O} M = record 
@@ -178,6 +194,35 @@ MRfunctoriality-2 : {A B : Set} → MRfunctor {A} {A} {B} {B} id id ≡ id
 MRfunctoriality-2 = refl
 
 
+-- ⟦_⟧ is a functor 
+
+Mlyfunctor : {A A' B B' : Set} → (u : A' → A) (v : B → B') → (m : Mealy A B) → Mealy A' B' 
+Mlyfunctor u v m = let module m = Mealy m in record 
+  { E = m.E 
+  ; d = λ { (a' , e) → m.d (u a' , e) } 
+  ; s = λ { (a' , e) → v (m.s (u a' , e)) } 
+  }
+-- I have to check the two separate halves of the square, but at this 
+-- point I'm doubtful it's true!
+
+naturality⟦⟧ : {A A' B B' : Set} → (u : A' → A) (v : B → B') → (t : MR A B) → 
+  Mlyfunctor u v ⟦ t ⟧ ≡ record 
+    { E = A → B 
+    ; d = λ { (x , h) s → ϕ t (h (u x)) s } 
+    ; s = λ { (a' , e) → v (e (u a')) }
+    }
+naturality⟦⟧ u v t = refl
+
+naturality⟦⟧' : {A A' B B' : Set} → (u : A' → A) (v : B → B') → (t : MR A B) → 
+  ⟦ MRfunctor u v t ⟧ ≡ record 
+    { E = A' → B' 
+    ; d = λ { (x , f) i' → ϕ (MRfunctor u v t) (f x) i' } 
+    ; s = λ { (i , f) → f i } 
+    } 
+naturality⟦⟧' u v t = refl
+
+--
+
 -- counità ?
 ε : MR A B → A → B
 ε M = f M 
@@ -267,4 +312,19 @@ module _ (x : MR A B) where
     ; d-eq = λ { (a , f , u) → refl } 
     ; s-eq = λ { (a , f , u) → {! !} } 
     }
+
+  unit-counit-verifica : Mealy⇒ (Companion.comp ((f x) ₒ)) (⟦ x ⟧)
+  unit-counit-verifica = record 
+    { hom = λ { tt a → f x a } 
+    ; d-eq = λ { (a , tt) → {! !} } 
+    ; s-eq = λ { (a , tt) → refl } 
+    }
+
+  unit-counit-coverifica : Mealy⇒ (⟦ x ⟧) (Companion.comp ((f x) ₒ))
+  unit-counit-coverifica = record 
+    { hom = λ { t → tt } 
+    ; d-eq = λ { x₁ → refl } 
+    ; s-eq = λ { (a , t) → {! !} } 
+    }
+
 
